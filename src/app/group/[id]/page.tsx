@@ -19,7 +19,7 @@ export default async function GroupPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, vote_mode, invite_code")
+    .select("id, name, invite_code")
     .eq("id", groupId)
     .single();
 
@@ -59,8 +59,6 @@ export default async function GroupPage({
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Codice invito: <code className="font-mono">{group.invite_code}</code>
-            {" · "}
-            {group.vote_mode === "DETAILED" ? "Voto dettagliato" : "Voto semplice"}
           </p>
         </header>
 

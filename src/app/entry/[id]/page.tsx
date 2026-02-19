@@ -19,7 +19,7 @@ export default async function EntryPage({
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("id, group_id, type, title, description, happened_at, created_by, created_at, groups(id, name)")
+    .select("id, group_id, type, title, description, happened_at, vote_mode, created_by, created_at, groups(id, name)")
     .eq("id", entryId)
     .single();
 
@@ -45,7 +45,7 @@ export default async function EntryPage({
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select("id, user_id, rating_overall, comment, created_at")
+    .select("id, user_id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, created_at")
     .eq("entry_id", entryId)
     .order("created_at", { ascending: false });
 
@@ -92,6 +92,8 @@ export default async function EntryPage({
                   month: "long",
                   year: "numeric",
                 })}
+                {" · "}
+                {(entry.vote_mode ?? "SIMPLE") === "DETAILED" ? "Voto dettagliato" : "Voto semplice"}
               </p>
             </div>
             {entry.created_by === user.id && (
@@ -171,6 +173,19 @@ export default async function EntryPage({
                     <span className="mt-1 block font-medium text-zinc-900 dark:text-zinc-100">
                       ★ {r.rating_overall}/10
                     </span>
+                    {(entry.vote_mode ?? "SIMPLE") === "DETAILED" &&
+                      "rating_cost" in r &&
+                      r.rating_cost != null && (
+                        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          Costo {r.rating_cost}
+                          {" · "}
+                          Servizio {r.rating_service}
+                          {" · "}
+                          Cibo {r.rating_food}
+                          {" · "}
+                          Location {r.rating_location}
+                        </p>
+                      )}
                     {r.comment && (
                       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                         {r.comment}

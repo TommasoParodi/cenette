@@ -24,13 +24,12 @@ export default async function DashboardPage() {
 
   const { data: memberships } = await supabase
     .from("group_members")
-    .select("group_id, groups(id, name, vote_mode, invite_code, created_at)")
+    .select("group_id, groups(id, name, invite_code, created_at)")
     .eq("user_id", user.id);
 
   type GroupRow = {
     id: string;
     name: string;
-    vote_mode: string;
     invite_code: string;
     created_at: string;
   };
@@ -77,8 +76,6 @@ export default async function DashboardPage() {
                       {g.name}
                     </span>
                     <span className="ml-2 text-sm text-zinc-500 dark:text-zinc-400">
-                      {g.vote_mode === "DETAILED" ? "Voto dettagliato" : "Voto semplice"}
-                      {" · "}
                       Codice: <code className="font-mono">{g.invite_code}</code>
                     </span>
                   </Link>

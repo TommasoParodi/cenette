@@ -61,7 +61,6 @@ Future:
 Columns:
 - id (uuid, PK)
 - name (text)
-- vote_mode (group_vote_mode)
 - invite_code (text, unique, auto-generated 8 char)
 - created_by (uuid, FK -> profiles.id)
 - created_at
@@ -101,6 +100,7 @@ Columns:
 - id
 - group_id
 - type (HOME | OUT)
+- vote_mode (group_vote_mode) — modalità voto recensioni per questo evento (SIMPLE | DETAILED)
 - title
 - description
 - happened_at (date)
@@ -171,10 +171,7 @@ Columns:
 - user_id
 - rating_overall (1–10)
 - comment
-- rating_cost
-- rating_service
-- rating_food
-- rating_location
+- rating_cost, rating_service, rating_food, rating_location (1–10, nullable; usati quando l’evento ha vote_mode DETAILED)
 - photo_path
 - created_at
 - updated_at
@@ -217,10 +214,10 @@ Helper:
 
 # RPC Functions (Atomic Business Logic)
 
-## rpc_create_group(name, vote_mode)
+## rpc_create_group(name)
 
 Creates:
-- groups row
+- groups row (senza vote_mode; la modalità voto è definita per singolo evento)
 - group_members row (self)
 
 Returns:

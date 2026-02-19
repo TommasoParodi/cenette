@@ -3,23 +3,16 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export type VoteMode = "SIMPLE" | "DETAILED";
-
 export async function createGroup(formData: FormData) {
   const name = formData.get("name") as string | null;
-  const voteMode = formData.get("vote_mode") as VoteMode | null;
 
   if (!name?.trim()) {
     return { error: "Inserisci un nome per il gruppo." };
-  }
-  if (!voteMode || (voteMode !== "SIMPLE" && voteMode !== "DETAILED")) {
-    return { error: "Seleziona una modalità di voto (Semplice o Dettagliata)." };
   }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("rpc_create_group", {
     p_name: name.trim(),
-    p_vote_mode: voteMode,
   });
 
   if (error) {

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type EntryType = "HOME" | "OUT";
+export type VoteMode = "SIMPLE" | "DETAILED";
 
 export async function createEntry(groupId: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -29,6 +30,7 @@ export async function createEntry(groupId: string, formData: FormData) {
 
   const title = formData.get("title") as string | null;
   const type = formData.get("type") as EntryType | null;
+  const voteMode = formData.get("vote_mode") as VoteMode | null;
   const happenedAtRaw = formData.get("happened_at") as string | null;
   const description = (formData.get("description") as string | null)?.trim() || null;
 
@@ -37,6 +39,9 @@ export async function createEntry(groupId: string, formData: FormData) {
   }
   if (!type || (type !== "HOME" && type !== "OUT")) {
     return { error: "Seleziona il tipo di evento (Casa o Fuori)." };
+  }
+  if (!voteMode || (voteMode !== "SIMPLE" && voteMode !== "DETAILED")) {
+    return { error: "Seleziona la modalità di voto (Semplice o Dettagliata)." };
   }
   if (!happenedAtRaw?.trim()) {
     return { error: "Inserisci la data dell'evento." };
@@ -51,6 +56,7 @@ export async function createEntry(groupId: string, formData: FormData) {
     group_id: groupId,
     title: title.trim(),
     type,
+    vote_mode: voteMode,
     happened_at: happenedAt.toISOString(),
     description,
     created_by: user.id,
@@ -90,6 +96,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   const title = formData.get("title") as string | null;
   const type = formData.get("type") as EntryType | null;
+  const voteMode = formData.get("vote_mode") as VoteMode | null;
   const happenedAtRaw = formData.get("happened_at") as string | null;
   const description = (formData.get("description") as string | null)?.trim() || null;
 
@@ -98,6 +105,9 @@ export async function updateEntry(entryId: string, formData: FormData) {
   }
   if (!type || (type !== "HOME" && type !== "OUT")) {
     return { error: "Seleziona il tipo di evento (Casa o Fuori)." };
+  }
+  if (!voteMode || (voteMode !== "SIMPLE" && voteMode !== "DETAILED")) {
+    return { error: "Seleziona la modalità di voto (Semplice o Dettagliata)." };
   }
   if (!happenedAtRaw?.trim()) {
     return { error: "Inserisci la data dell'evento." };
@@ -113,6 +123,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
     .update({
       title: title.trim(),
       type,
+      vote_mode: voteMode,
       happened_at: happenedAt.toISOString(),
       description,
     })
@@ -140,7 +151,7 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("group_id")
+    .select("group_id, vote_mode")
     .eq("id", entryId)
     .single();
 
@@ -164,16 +175,56 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
 
   const rating = ratingRaw != null ? parseInt(ratingRaw, 10) : NaN;
   if (Number.isNaN(rating) || rating < 1 || rating > 10) {
-    return { error: "Inserisci un voto tra 1 e 10." };
+    return { error: "Inserisci un voto complessivo tra 1 e 10." };
+  }
+
+  const isDetailed = (entry.vote_mode ?? "SIMPLE") === "DETAILED";
+  const payload: {
+    entry_id: string;
+    user_id: string;
+    rating_overall: number;
+    comment: string | null;
+    rating_cost?: number | null;
+    rating_service?: number | null;
+    rating_food?: number | null;
+    rating_location?: number | null;
+  } = {
+    entry_id: entryId,
+    user_id: user.id,
+    rating_overall: rating,
+    comment,
+  };
+
+  if (isDetailed) {
+    const parseRating = (raw: string | null) => {
+      const n = raw != null ? parseInt(raw, 10) : NaN;
+      return Number.isNaN(n) || n < 1 || n > 10 ? null : n;
+    };
+    const ratingCost = parseRating(formData.get("rating_cost") as string | null);
+    const ratingService = parseRating(formData.get("rating_service") as string | null);
+    const ratingFood = parseRating(formData.get("rating_food") as string | null);
+    const ratingLocation = parseRating(formData.get("rating_location") as string | null);
+    if (
+      ratingCost == null ||
+      ratingService == null ||
+      ratingFood == null ||
+      ratingLocation == null
+    ) {
+      return { error: "Inserisci tutti i voti dettagliati (1–10) per costo, servizio, cibo e location." };
+    }
+    payload.rating_cost = ratingCost;
+    payload.rating_service = ratingService;
+    payload.rating_food = ratingFood;
+    payload.rating_location = ratingLocation;
+  } else {
+    payload.rating_cost = null;
+    payload.rating_service = null;
+    payload.rating_food = null;
+    payload.rating_location = null;
   }
 
   const { error } = await supabase.from("reviews").upsert(
-    {
-      entry_id: entryId,
-      user_id: user.id,
-      rating_overall: rating,
-      comment,
-    },
+    payload,
     { onConflict: "user_id,entry_id" }
   );
 

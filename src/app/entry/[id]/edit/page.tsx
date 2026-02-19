@@ -20,7 +20,7 @@ export default async function EntryEditPage({
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("id, group_id, title, type, description, happened_at, created_by, groups(id, name)")
+    .select("id, group_id, title, type, description, happened_at, vote_mode, created_by, groups(id, name)")
     .eq("id", entryId)
     .single();
 
@@ -70,6 +70,7 @@ export default async function EntryEditPage({
             entryId={entryId}
             defaultTitle={entry.title}
             defaultType={entry.type as "HOME" | "OUT"}
+            defaultVoteMode={(entry.vote_mode as "SIMPLE" | "DETAILED") ?? "SIMPLE"}
             defaultHappenedAt={entry.happened_at}
             defaultDescription={entry.description}
           />

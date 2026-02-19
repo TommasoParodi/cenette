@@ -38,6 +38,20 @@ export function CreateEntryForm({ groupId }: Props) {
         <option value="OUT">Uscita / Fuori</option>
       </select>
       <div>
+        <label htmlFor="vote_mode" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
+          Modalità voto recensioni
+        </label>
+        <select
+          id="vote_mode"
+          name="vote_mode"
+          required
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+        >
+          <option value="SIMPLE">Voto semplice (solo voto 1–10)</option>
+          <option value="DETAILED">Voto dettagliato (costo, servizio, …)</option>
+        </select>
+      </div>
+      <div>
         <label htmlFor="happened_at" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
           Data
         </label>

@@ -5,14 +5,57 @@ import { createOrUpdateReview } from "@/server-actions/entries";
 
 type Props = {
   entryId: string;
+  voteMode: "SIMPLE" | "DETAILED";
   initialRating?: number | null;
   initialComment?: string | null;
+  initialRatingCost?: number | null;
+  initialRatingService?: number | null;
+  initialRatingFood?: number | null;
+  initialRatingLocation?: number | null;
 };
+
+function RatingInput({
+  id,
+  name,
+  label,
+  defaultValue,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  defaultValue: number | null | undefined;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400"
+      >
+        {label} (1–10)
+      </label>
+      <input
+        id={id}
+        type="number"
+        name={name}
+        min={1}
+        max={10}
+        required
+        defaultValue={defaultValue ?? ""}
+        className="w-20 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+      />
+    </div>
+  );
+}
 
 export function ReviewForm({
   entryId,
+  voteMode,
   initialRating,
   initialComment,
+  initialRatingCost,
+  initialRatingService,
+  initialRatingFood,
+  initialRatingLocation,
 }: Props) {
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
@@ -22,6 +65,7 @@ export function ReviewForm({
     },
     null as string | null
   );
+  const isDetailed = voteMode === "DETAILED";
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -30,7 +74,7 @@ export function ReviewForm({
           htmlFor="rating_overall"
           className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400"
         >
-          Voto (1–10)
+          Voto complessivo (1–10)
         </label>
         <input
           id="rating_overall"
@@ -43,6 +87,34 @@ export function ReviewForm({
           className="w-20 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
         />
       </div>
+      {isDetailed && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <RatingInput
+            id="rating_cost"
+            name="rating_cost"
+            label="Costo"
+            defaultValue={initialRatingCost}
+          />
+          <RatingInput
+            id="rating_service"
+            name="rating_service"
+            label="Servizio"
+            defaultValue={initialRatingService}
+          />
+          <RatingInput
+            id="rating_food"
+            name="rating_food"
+            label="Cibo"
+            defaultValue={initialRatingFood}
+          />
+          <RatingInput
+            id="rating_location"
+            name="rating_location"
+            label="Location"
+            defaultValue={initialRatingLocation}
+          />
+        </div>
+      )}
       <div>
         <label
           htmlFor="comment"

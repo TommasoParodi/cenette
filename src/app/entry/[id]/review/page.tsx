@@ -20,7 +20,7 @@ export default async function EntryReviewPage({
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("id, group_id, title, groups(id, name)")
+    .select("id, group_id, title, vote_mode, groups(id, name)")
     .eq("id", entryId)
     .single();
 
@@ -46,7 +46,7 @@ export default async function EntryReviewPage({
 
   const { data: myReview } = await supabase
     .from("reviews")
-    .select("id, rating_overall, comment")
+    .select("id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location")
     .eq("entry_id", entryId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -74,8 +74,13 @@ export default async function EntryReviewPage({
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
           <ReviewForm
             entryId={entryId}
+            voteMode={(entry.vote_mode ?? "SIMPLE") as "SIMPLE" | "DETAILED"}
             initialRating={myReview?.rating_overall}
             initialComment={myReview?.comment}
+            initialRatingCost={myReview?.rating_cost}
+            initialRatingService={myReview?.rating_service}
+            initialRatingFood={myReview?.rating_food}
+            initialRatingLocation={myReview?.rating_location}
           />
         </section>
       </div>

@@ -7,7 +7,7 @@ Database e RLS sono stati creati su Supabase come da `docs/architecture.md` e `d
 ## 1. Gruppi (priorità immediata)
 
 - **Server actions** (in `src/server-actions/` o inline nelle route):
-  - `createGroup(name, vote_mode)` → chiama RPC `rpc_create_group`
+  - `createGroup(name)` → chiama RPC `rpc_create_group`
   - `joinGroup(invite_code)` → chiama RPC `rpc_join_group`
 - **Dashboard**:
   - Elenco gruppi dell’utente (query su `group_members` + `groups`)
@@ -82,7 +82,7 @@ Database e RLS sono stati creati su Supabase come da `docs/architecture.md` e `d
 Prima di codare, in Supabase controllare che esistano:
 
 - Tabelle: `profiles`, `groups`, `group_members`, `entries`, `entry_photos`, `entry_cooks`, `reviews`.
-- RPC: `rpc_create_group(name, vote_mode)`, `rpc_join_group(invite_code)`.
+- RPC: `rpc_create_group(name)`, `rpc_join_group(invite_code)`. La modalità voto (semplice/dettagliato) è per evento (colonna `entries.vote_mode`).
 - Trigger: `handle_new_user` su `auth.users`, eventuale `set_updated_at` su `entries`/`reviews`.
 - Bucket (quando servono): `entry-photos`, `review-photos`, `avatars` (tutti privati).
 
