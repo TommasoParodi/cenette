@@ -65,12 +65,20 @@ export default async function GroupPage({
         </header>
 
         <section>
-          <h2 className="mb-4 text-lg font-medium text-zinc-800 dark:text-zinc-200">
-            Eventi
-          </h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-medium text-zinc-800 dark:text-zinc-200">
+              Eventi
+            </h2>
+            <Link
+              href={`/group/${groupId}/new`}
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Aggiungi evento
+            </Link>
+          </div>
           {!entries?.length ? (
             <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
-              Nessun evento. Presto potrai aggiungerne uno da qui.
+              Nessun evento. Aggiungine uno con il pulsante sopra.
             </p>
           ) : (
             <ul className="space-y-2">
