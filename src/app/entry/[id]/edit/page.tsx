@@ -69,6 +69,23 @@ export default async function EntryEditPage({
 
   const participantIds = (participants ?? []).map((p) => p.user_id);
 
+  const { data: entryPhotos } = await supabase
+    .from("entry_photos")
+    .select("id, storage_path")
+    .eq("entry_id", entryId)
+    .order("created_at", { ascending: true });
+
+  const currentPhotos: { id: string; url: string }[] = [];
+  if (entryPhotos?.length) {
+    const bucket = "entry-photos";
+    for (const p of entryPhotos) {
+      const { data: signed } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(p.storage_path, 3600);
+      if (signed?.signedUrl) currentPhotos.push({ id: p.id, url: signed.signedUrl });
+    }
+  }
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
       <div className="mx-auto max-w-2xl">
@@ -98,6 +115,7 @@ export default async function EntryEditPage({
             members={membersWithProfile}
             defaultParticipantIds={participantIds}
             creatorId={entry.created_by}
+            currentPhotos={currentPhotos}
           />
         </section>
       </div>

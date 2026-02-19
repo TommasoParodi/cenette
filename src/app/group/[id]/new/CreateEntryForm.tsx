@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
 import { createEntry } from "@/server-actions/entries";
+import { compressPhotoFiles } from "@/lib/compress-photos";
 
 type Member = { id: string; displayName: string };
 
@@ -17,17 +18,43 @@ function todayISO(): string {
 }
 
 export function CreateEntryForm({ groupId, members, currentUserId }: Props) {
-  const [state, formAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      const result = await createEntry(groupId, formData);
-      if (result?.error) return result.error;
-      return null;
-    },
-    null as string | null
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const rawPhotos = (formData.getAll("photos") as File[]).filter(
+      (f): f is File => f instanceof File && f.size > 0
+    );
+    let photos = rawPhotos.slice(0, 3);
+    if (photos.length > 0) {
+      try {
+        photos = await compressPhotoFiles(photos);
+      } catch {
+        setError("Errore durante la compressione delle foto.");
+        setPending(false);
+        return;
+      }
+    }
+    const newFormData = new FormData();
+    for (const [key, value] of formData.entries()) {
+      if (key === "photos") continue;
+      newFormData.append(key, value);
+    }
+    for (const file of photos) {
+      newFormData.append("photos", file);
+    }
+    const result = await createEntry(groupId, newFormData);
+    setPending(false);
+    if (result?.error) setError(result.error);
+  }
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <input
         type="text"
         name="title"
@@ -83,6 +110,22 @@ export function CreateEntryForm({ groupId, members, currentUserId }: Props) {
         />
       </div>
       <div>
+        <label htmlFor="photos" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
+          Foto evento (max 3, opzionale)
+        </label>
+        <input
+          id="photos"
+          type="file"
+          name="photos"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600"
+        />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          JPEG, PNG, WebP o GIF. Max 3 file. Verranno compresse automaticamente (~400 KB ciascuna).
+        </p>
+      </div>
+      <div>
         <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Partecipanti all&apos;evento (solo loro potranno scrivere una recensione)
         </span>
@@ -119,14 +162,15 @@ export function CreateEntryForm({ groupId, members, currentUserId }: Props) {
           })}
         </ul>
       </div>
-      {state && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state}</p>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
       <button
         type="submit"
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        disabled={pending}
+        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
       >
-        Crea evento
+        {pending ? "Creazione in corso…" : "Crea evento"}
       </button>
     </form>
   );

@@ -51,6 +51,24 @@ export default async function EntryPage({
   const isParticipant =
     participantIds.length === 0 || participantIds.includes(user.id);
 
+  const { data: entryPhotos } = await supabase
+    .from("entry_photos")
+    .select("id, storage_path")
+    .eq("entry_id", entryId)
+    .order("created_at", { ascending: true });
+
+  const photoUrls: { id: string; url: string }[] = [];
+  if (entryPhotos?.length) {
+    const bucket = "entry-photos";
+    const expiresIn = 3600;
+    for (const p of entryPhotos) {
+      const { data: signed } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(p.storage_path, expiresIn);
+      if (signed?.signedUrl) photoUrls.push({ id: p.id, url: signed.signedUrl });
+    }
+  }
+
   const { data: reviews } = await supabase
     .from("reviews")
     .select("id, user_id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, created_at")
@@ -118,6 +136,26 @@ export default async function EntryPage({
         {entry.description && (
           <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
             <p className="text-zinc-700 dark:text-zinc-300">{entry.description}</p>
+          </section>
+        )}
+
+        {photoUrls.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Foto evento
+            </h2>
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {photoUrls.map(({ id, url }) => (
+                <li key={id} className="aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

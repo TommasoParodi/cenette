@@ -94,6 +94,55 @@ export async function createEntry(groupId: string, formData: FormData) {
     return { error: participantsError.message || "Impossibile salvare i partecipanti." };
   }
 
+  // Foto evento (max 3): bucket entry-photos, path entries/<entry_id>/<file>
+  const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+  const photoFiles = (formData.getAll("photos") as File[]).filter(
+    (f): f is File => f instanceof File && f.size > 0
+  ).slice(0, 3);
+
+  for (const file of photoFiles) {
+    if (!acceptedTypes.includes(file.type)) {
+      return { error: "Formato foto non consentito. Usa JPEG, PNG, WebP o GIF." };
+    }
+    if (file.size > maxSizeBytes) {
+      return { error: "Ogni foto deve essere al massimo 5 MB." };
+    }
+  }
+
+  const bucket = "entry-photos";
+  const prefix = `entries/${newEntry.id}`;
+
+  for (let i = 0; i < photoFiles.length; i++) {
+    const file = photoFiles[i];
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["jpeg", "jpg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+    const storagePath = `${prefix}/${crypto.randomUUID()}.${safeExt}`;
+
+    const bytes = await file.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("createEntry photo upload error:", uploadError);
+      return { error: "Impossibile caricare una foto. Verifica che il bucket entry-photos esista." };
+    }
+
+    const { error: insertError } = await supabase.from("entry_photos").insert({
+      entry_id: newEntry.id,
+      storage_path: storagePath,
+    });
+
+    if (insertError) {
+      console.error("createEntry entry_photos insert error:", insertError);
+      return { error: insertError.message || "Impossibile salvare il riferimento alla foto." };
+    }
+  }
+
   revalidatePath(`/group/${groupId}`);
   redirect(`/group/${groupId}`);
 }
@@ -186,9 +235,171 @@ export async function updateEntry(entryId: string, formData: FormData) {
   // Le recensioni di chi non è più partecipante vengono cancellate dal trigger
   // delete_review_when_participant_removed su entry_participants (DELETE)
 
+  // Nuove foto (rispettando max 3 totali)
+  const { count } = await supabase
+    .from("entry_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("entry_id", entryId);
+  const currentPhotoCount = count ?? 0;
+  const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const maxSizeBytes = 5 * 1024 * 1024;
+  const photoFiles = (formData.getAll("photos") as File[]).filter(
+    (f): f is File => f instanceof File && f.size > 0
+  ).slice(0, Math.max(0, 3 - currentPhotoCount));
+
+  for (const file of photoFiles) {
+    if (!acceptedTypes.includes(file.type)) {
+      return { error: "Formato foto non consentito. Usa JPEG, PNG, WebP o GIF." };
+    }
+    if (file.size > maxSizeBytes) {
+      return { error: "Ogni foto deve essere al massimo 5 MB." };
+    }
+  }
+
+  const bucket = "entry-photos";
+  const prefix = `entries/${entryId}`;
+  for (const file of photoFiles) {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["jpeg", "jpg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+    const storagePath = `${prefix}/${crypto.randomUUID()}.${safeExt}`;
+    const bytes = await file.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(storagePath, bytes, { contentType: file.type, upsert: false });
+    if (uploadError) {
+      console.error("updateEntry photo upload error:", uploadError);
+      return { error: "Impossibile caricare una foto." };
+    }
+    const { error: insertError } = await supabase.from("entry_photos").insert({
+      entry_id: entryId,
+      storage_path: storagePath,
+    });
+    if (insertError) {
+      console.error("updateEntry entry_photos insert error:", insertError);
+      return { error: insertError.message || "Impossibile salvare il riferimento alla foto." };
+    }
+  }
+
   revalidatePath(`/entry/${entryId}`);
   revalidatePath(`/group/${entry.group_id}`);
   redirect(`/entry/${entryId}`);
+}
+
+export async function deleteEntryPhoto(formData: FormData) {
+  const photoId = formData.get("photoId") as string | null;
+  if (!photoId?.trim()) {
+    return { error: "Foto non specificata." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Non autenticato." };
+  }
+
+  const { data: photo } = await supabase
+    .from("entry_photos")
+    .select("id, entry_id, storage_path, entries(created_by, group_id)")
+    .eq("id", photoId)
+    .single();
+
+  if (!photo) {
+    return { error: "Foto non trovata." };
+  }
+  const rawEntry = photo.entries as { created_by: string; group_id: string } | { created_by: string; group_id: string }[] | null;
+  const entry = Array.isArray(rawEntry) ? rawEntry[0] : rawEntry;
+  if (!entry || entry.created_by !== user.id) {
+    return { error: "Solo il creatore dell'evento può rimuovere le foto." };
+  }
+
+  await supabase.storage.from("entry-photos").remove([photo.storage_path]);
+  const { error } = await supabase.from("entry_photos").delete().eq("id", photoId);
+  if (error) {
+    console.error("deleteEntryPhoto error:", error);
+    return { error: error.message || "Impossibile rimuovere la foto." };
+  }
+
+  revalidatePath(`/entry/${photo.entry_id}`);
+  revalidatePath(`/group/${entry.group_id}`);
+  redirect(`/entry/${photo.entry_id}/edit`);
+}
+
+/** Carica subito le foto selezionate (senza salvare il resto del form). Redirect alla stessa pagina modifica. */
+export async function uploadEntryPhotos(entryId: string, formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Devi essere autenticato." };
+  }
+
+  const { data: entry } = await supabase
+    .from("entries")
+    .select("id, group_id, created_by")
+    .eq("id", entryId)
+    .single();
+
+  if (!entry) {
+    return { error: "Evento non trovato." };
+  }
+  if (entry.created_by !== user.id) {
+    return { error: "Solo il creatore dell'evento può aggiungere foto." };
+  }
+
+  const { count } = await supabase
+    .from("entry_photos")
+    .select("id", { count: "exact", head: true })
+    .eq("entry_id", entryId);
+  const currentPhotoCount = count ?? 0;
+  const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const maxSizeBytes = 5 * 1024 * 1024;
+  const photoFiles = (formData.getAll("photos") as File[]).filter(
+    (f): f is File => f instanceof File && f.size > 0
+  ).slice(0, Math.max(0, 3 - currentPhotoCount));
+
+  if (photoFiles.length === 0) {
+    return { error: "Seleziona almeno una foto da caricare." };
+  }
+
+  for (const file of photoFiles) {
+    if (!acceptedTypes.includes(file.type)) {
+      return { error: "Formato foto non consentito. Usa JPEG, PNG, WebP o GIF." };
+    }
+    if (file.size > maxSizeBytes) {
+      return { error: "Ogni foto deve essere al massimo 5 MB." };
+    }
+  }
+
+  const bucket = "entry-photos";
+  const prefix = `entries/${entryId}`;
+  for (const file of photoFiles) {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["jpeg", "jpg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+    const storagePath = `${prefix}/${crypto.randomUUID()}.${safeExt}`;
+    const bytes = await file.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(storagePath, bytes, { contentType: file.type, upsert: false });
+    if (uploadError) {
+      console.error("uploadEntryPhotos error:", uploadError);
+      return { error: "Impossibile caricare una foto." };
+    }
+    const { error: insertError } = await supabase.from("entry_photos").insert({
+      entry_id: entryId,
+      storage_path: storagePath,
+    });
+    if (insertError) {
+      console.error("uploadEntryPhotos insert error:", insertError);
+      return { error: insertError.message || "Impossibile salvare il riferimento alla foto." };
+    }
+  }
+
+  revalidatePath(`/entry/${entryId}`);
+  revalidatePath(`/group/${entry.group_id}`);
+  return { success: true };
 }
 
 export async function createOrUpdateReview(entryId: string, formData: FormData) {
