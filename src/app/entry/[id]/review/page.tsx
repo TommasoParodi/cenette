@@ -58,10 +58,18 @@ export default async function EntryReviewPage({
 
   const { data: myReview } = await supabase
     .from("reviews")
-    .select("id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location")
+    .select("id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, photo_path")
     .eq("entry_id", entryId)
     .eq("user_id", user.id)
     .maybeSingle();
+
+  let myReviewPhotoUrl: string | null = null;
+  if (myReview?.photo_path) {
+    const { data: signed } = await supabase.storage
+      .from("review-photos")
+      .createSignedUrl(myReview.photo_path, 3600);
+    if (signed?.signedUrl) myReviewPhotoUrl = signed.signedUrl;
+  }
 
   const isEdit = !!myReview;
 
@@ -93,6 +101,7 @@ export default async function EntryReviewPage({
             initialRatingService={myReview?.rating_service}
             initialRatingFood={myReview?.rating_food}
             initialRatingLocation={myReview?.rating_location}
+            initialPhotoUrl={myReviewPhotoUrl}
           />
         </section>
       </div>

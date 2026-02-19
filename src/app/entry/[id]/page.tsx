@@ -71,7 +71,7 @@ export default async function EntryPage({
 
   const { data: reviews } = await supabase
     .from("reviews")
-    .select("id, user_id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, created_at")
+    .select("id, user_id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, photo_path, created_at")
     .eq("entry_id", entryId)
     .order("created_at", { ascending: false });
 
@@ -94,6 +94,19 @@ export default async function EntryPage({
   const reviewsOrdered = myReview
     ? [myReview, ...otherReviews]
     : otherReviews;
+
+  const reviewPhotoUrls = new Map<string, string>();
+  const reviewPhotosWithPath = (reviews ?? []).filter((r) => r.photo_path);
+  if (reviewPhotosWithPath.length > 0) {
+    const bucket = "review-photos";
+    const expiresIn = 3600;
+    for (const r of reviewPhotosWithPath) {
+      const { data: signed } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(r.photo_path!, expiresIn);
+      if (signed?.signedUrl) reviewPhotoUrls.set(r.id, signed.signedUrl);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
@@ -208,40 +221,62 @@ export default async function EntryPage({
                         : "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900"
                     }
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                        {authorName}
-                      </span>
-                      {isMine && (
-                        <Link
-                          href={`/entry/${entryId}/review`}
-                          className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                        >
-                          Modifica
-                        </Link>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                          {authorName}
+                        </span>
+                        {isMine && (
+                          <Link
+                            href={`/entry/${entryId}/review`}
+                            className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                          >
+                            Modifica
+                          </Link>
+                        )}
+                      </div>
+                      <div
+                        className={
+                          reviewPhotoUrls.get(r.id)
+                            ? "grid gap-4 sm:grid-cols-[7fr_minmax(0,3fr)]"
+                            : ""
+                        }
+                      >
+                        <div className="min-w-0">
+                          <span className="mt-1 block font-medium text-zinc-900 dark:text-zinc-100">
+                            ★ {r.rating_overall}/10
+                          </span>
+                          {(entry.vote_mode ?? "SIMPLE") === "DETAILED" &&
+                            "rating_cost" in r &&
+                            r.rating_cost != null && (
+                              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                Costo {r.rating_cost}
+                                {" · "}
+                                Servizio {r.rating_service}
+                                {" · "}
+                                Cibo {r.rating_food}
+                                {" · "}
+                                Location {r.rating_location}
+                              </p>
+                            )}
+                          {r.comment && (
+                            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                              {r.comment}
+                            </p>
+                          )}
+                        </div>
+                      {reviewPhotoUrls.get(r.id) && (
+                        <div className="flex shrink-0 items-center justify-center pl-4 sm:min-w-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={reviewPhotoUrls.get(r.id)!}
+                            alt="Foto recensione"
+                            className="max-h-32 w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-600 sm:max-h-40"
+                          />
+                        </div>
                       )}
+                      </div>
                     </div>
-                    <span className="mt-1 block font-medium text-zinc-900 dark:text-zinc-100">
-                      ★ {r.rating_overall}/10
-                    </span>
-                    {(entry.vote_mode ?? "SIMPLE") === "DETAILED" &&
-                      "rating_cost" in r &&
-                      r.rating_cost != null && (
-                        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                          Costo {r.rating_cost}
-                          {" · "}
-                          Servizio {r.rating_service}
-                          {" · "}
-                          Cibo {r.rating_food}
-                          {" · "}
-                          Location {r.rating_location}
-                        </p>
-                      )}
-                    {r.comment && (
-                      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        {r.comment}
-                      </p>
-                    )}
                   </li>
                 );
               })}

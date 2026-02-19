@@ -12,6 +12,8 @@ type Props = {
   initialRatingService?: number | null;
   initialRatingFood?: number | null;
   initialRatingLocation?: number | null;
+  /** URL della foto attuale (signed) per anteprima e opzione "Rimuovi" */
+  initialPhotoUrl?: string | null;
 };
 
 function RatingInput({
@@ -56,6 +58,7 @@ export function ReviewForm({
   initialRatingService,
   initialRatingFood,
   initialRatingLocation,
+  initialPhotoUrl,
 }: Props) {
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
@@ -130,6 +133,34 @@ export function ReviewForm({
           defaultValue={initialComment ?? ""}
           className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
         />
+      </div>
+      <div>
+        <span className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
+          Foto recensione (opzionale, max 1)
+        </span>
+        {initialPhotoUrl && (
+          <div className="mb-2 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={initialPhotoUrl}
+              alt="Foto recensione"
+              className="h-20 w-20 rounded-lg border border-zinc-200 object-cover dark:border-zinc-600"
+            />
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <input type="checkbox" name="remove_photo" value="1" className="rounded" />
+              Rimuovi foto
+            </label>
+          </div>
+        )}
+        <input
+          type="file"
+          name="photo"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-700 dark:text-zinc-400 dark:file:bg-zinc-700 dark:file:text-zinc-200"
+        />
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          JPEG, PNG, WebP o GIF, max 5 MB
+        </p>
       </div>
       {state && (
         <p className="text-sm text-red-600 dark:text-red-400">{state}</p>

@@ -497,14 +497,66 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
     payload.rating_location = null;
   }
 
-  const { error } = await supabase.from("reviews").upsert(
-    payload,
-    { onConflict: "user_id,entry_id" }
-  );
+  const { data: upserted, error } = await supabase
+    .from("reviews")
+    .upsert(payload, { onConflict: "user_id,entry_id" })
+    .select("id, photo_path")
+    .single();
 
   if (error) {
     console.error("createOrUpdateReview error:", error);
     return { error: error.message || "Impossibile salvare la recensione." };
+  }
+  if (!upserted?.id) {
+    return { error: "Impossibile salvare la recensione." };
+  }
+
+  const reviewId = upserted.id;
+  const bucket = "review-photos";
+  const prefix = `reviews/${reviewId}`;
+  const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+  const photoFile = formData.get("photo") as File | null;
+
+  if (photoFile && photoFile instanceof File && photoFile.size > 0) {
+    if (!acceptedTypes.includes(photoFile.type)) {
+      return { error: "Formato foto non consentito. Usa JPEG, PNG, WebP o GIF." };
+    }
+    if (photoFile.size > maxSizeBytes) {
+      return { error: "La foto deve essere al massimo 5 MB." };
+    }
+    // Rimuovi vecchia foto se presente
+    if (upserted.photo_path) {
+      await supabase.storage.from(bucket).remove([upserted.photo_path]);
+    }
+    const ext = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["jpeg", "jpg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+    const storagePath = `${prefix}/${crypto.randomUUID()}.${safeExt}`;
+    const bytes = await photoFile.arrayBuffer();
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(storagePath, bytes, {
+        contentType: photoFile.type,
+        upsert: false,
+      });
+    if (uploadError) {
+      console.error("createOrUpdateReview photo upload error:", uploadError);
+      return { error: "Impossibile caricare la foto. Verifica che il bucket review-photos esista." };
+    }
+    const { error: updateError } = await supabase
+      .from("reviews")
+      .update({ photo_path: storagePath })
+      .eq("id", reviewId);
+    if (updateError) {
+      console.error("createOrUpdateReview photo_path update error:", updateError);
+      return { error: "Recensione salvata ma foto non associata." };
+    }
+  }
+
+  const removePhoto = formData.get("remove_photo") === "1";
+  if (removePhoto && upserted.photo_path) {
+    await supabase.storage.from(bucket).remove([upserted.photo_path]);
+    await supabase.from("reviews").update({ photo_path: null }).eq("id", reviewId);
   }
 
   revalidatePath(`/entry/${entryId}`);
