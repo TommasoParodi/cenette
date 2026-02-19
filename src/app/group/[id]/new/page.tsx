@@ -39,6 +39,21 @@ export default async function NewEntryPage({
     notFound();
   }
 
+  const { data: members } = await supabase
+    .from("group_members")
+    .select("user_id, profiles(id, display_name)")
+    .eq("group_id", groupId);
+
+  const membersWithProfile = (members ?? []).map((m) => {
+    const raw = m.profiles as unknown;
+    const profile = Array.isArray(raw) ? raw[0] : raw;
+    const p = profile as { id: string; display_name: string | null } | null | undefined;
+    return {
+      id: m.user_id,
+      displayName: p?.display_name ?? "Utente",
+    };
+  });
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
       <div className="mx-auto max-w-2xl">
@@ -55,7 +70,11 @@ export default async function NewEntryPage({
         </header>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-          <CreateEntryForm groupId={groupId} />
+          <CreateEntryForm
+            groupId={groupId}
+            members={membersWithProfile}
+            currentUserId={user.id}
+          />
         </section>
       </div>
     </main>

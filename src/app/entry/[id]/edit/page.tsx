@@ -47,6 +47,28 @@ export default async function EntryEditPage({
     notFound();
   }
 
+  const { data: members } = await supabase
+    .from("group_members")
+    .select("user_id, profiles(id, display_name)")
+    .eq("group_id", entry.group_id);
+
+  const membersWithProfile = (members ?? []).map((m) => {
+    const raw = m.profiles as unknown;
+    const profile = Array.isArray(raw) ? raw[0] : raw;
+    const p = profile as { id: string; display_name: string | null } | null | undefined;
+    return {
+      id: m.user_id,
+      displayName: p?.display_name ?? "Utente",
+    };
+  });
+
+  const { data: participants } = await supabase
+    .from("entry_participants")
+    .select("user_id")
+    .eq("entry_id", entryId);
+
+  const participantIds = (participants ?? []).map((p) => p.user_id);
+
   return (
     <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
       <div className="mx-auto max-w-2xl">
@@ -73,6 +95,9 @@ export default async function EntryEditPage({
             defaultVoteMode={(entry.vote_mode as "SIMPLE" | "DETAILED") ?? "SIMPLE"}
             defaultHappenedAt={entry.happened_at}
             defaultDescription={entry.description}
+            members={membersWithProfile}
+            defaultParticipantIds={participantIds}
+            creatorId={entry.created_by}
           />
         </section>
       </div>

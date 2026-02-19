@@ -52,19 +52,46 @@ export async function createEntry(groupId: string, formData: FormData) {
     return { error: "Data non valida." };
   }
 
-  const { error } = await supabase.from("entries").insert({
-    group_id: groupId,
-    title: title.trim(),
-    type,
-    vote_mode: voteMode,
-    happened_at: happenedAt.toISOString(),
-    description,
-    created_by: user.id,
-  });
+  const participantIdsRaw = formData.getAll("participants");
+  const participantIds = Array.isArray(participantIdsRaw)
+    ? (participantIdsRaw as string[]).filter((id) => typeof id === "string" && id.length > 0)
+    : [];
+
+  const { data: newEntry, error } = await supabase
+    .from("entries")
+    .insert({
+      group_id: groupId,
+      title: title.trim(),
+      type,
+      vote_mode: voteMode,
+      happened_at: happenedAt.toISOString(),
+      description,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("createEntry error:", error);
     return { error: error.message || "Impossibile creare l'evento." };
+  }
+  if (!newEntry?.id) {
+    return { error: "Impossibile creare l'evento." };
+  }
+
+  const finalParticipantIds = [...new Set([user.id, ...participantIds])];
+  const { error: participantsError } = await supabase
+    .from("entry_participants")
+    .insert(
+      finalParticipantIds.map((uid) => ({
+        entry_id: newEntry.id,
+        user_id: uid,
+      }))
+    );
+
+  if (participantsError) {
+    console.error("createEntry participants error:", participantsError);
+    return { error: participantsError.message || "Impossibile salvare i partecipanti." };
   }
 
   revalidatePath(`/group/${groupId}`);
@@ -134,6 +161,31 @@ export async function updateEntry(entryId: string, formData: FormData) {
     return { error: error.message || "Impossibile aggiornare l'evento." };
   }
 
+  const participantIdsRaw = formData.getAll("participants");
+  const participantIds = Array.isArray(participantIdsRaw)
+    ? (participantIdsRaw as string[]).filter((id) => typeof id === "string" && id.length > 0)
+    : [];
+  const finalParticipantIds = [...new Set([entry.created_by, ...participantIds])];
+
+  await supabase.from("entry_participants").delete().eq("entry_id", entryId);
+  if (finalParticipantIds.length > 0) {
+    const { error: participantsError } = await supabase
+      .from("entry_participants")
+      .insert(
+        finalParticipantIds.map((uid) => ({
+          entry_id: entryId,
+          user_id: uid,
+        }))
+      );
+    if (participantsError) {
+      console.error("updateEntry participants error:", participantsError);
+      return { error: participantsError.message || "Impossibile aggiornare i partecipanti." };
+    }
+  }
+
+  // Le recensioni di chi non è più partecipante vengono cancellate dal trigger
+  // delete_review_when_participant_removed su entry_participants (DELETE)
+
   revalidatePath(`/entry/${entryId}`);
   revalidatePath(`/group/${entry.group_id}`);
   redirect(`/entry/${entryId}`);
@@ -168,6 +220,17 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
 
   if (!membership) {
     return { error: "Non fai parte di questo gruppo." };
+  }
+
+  const { data: participants } = await supabase
+    .from("entry_participants")
+    .select("user_id")
+    .eq("entry_id", entryId);
+  const participantIds = (participants ?? []).map((p) => p.user_id);
+  const canReview =
+    participantIds.length === 0 || participantIds.includes(user.id);
+  if (!canReview) {
+    return { error: "Solo i partecipanti all'evento possono scrivere una recensione." };
   }
 
   const ratingRaw = formData.get("rating_overall") as string | null;

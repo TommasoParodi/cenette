@@ -161,6 +161,30 @@ RLS:
 
 ---
 
+# Entry Participants (chi può scrivere una recensione)
+
+## Table: entry_participants
+
+Collegamento evento ↔ membri che hanno partecipato. Solo i partecipanti possono scrivere una recensione; l’evento è visibile a tutti i membri del gruppo. I partecipanti li sceglie (e può modificare) il creatore dell’evento.
+
+Columns:
+- entry_id (uuid, FK -> entries.id)
+- user_id (uuid, FK -> profiles.id)
+- PK (entry_id, user_id)
+
+RLS:
+- SELECT: membri del gruppo
+- INSERT/DELETE: solo creatore dell’entry
+
+Helper:
+- is_entry_participant(entry_id)
+- entry_has_participants(entry_id)
+
+Trigger:
+- **on_entry_participant_deleted** (AFTER DELETE su entry_participants): chiama `delete_review_when_participant_removed()` e cancella la recensione di quel (entry_id, user_id). Così, se il creatore rimuove un partecipante, la sua recensione viene eliminata automaticamente.
+
+---
+
 # Reviews
 
 ## Table: reviews
@@ -181,7 +205,7 @@ Constraints:
 
 RLS:
 - SELECT: group members
-- INSERT: group member AND user_id = auth.uid()
+- INSERT: group member AND user_id = auth.uid() AND (is_entry_participant(entry_id) OR NOT entry_has_participants(entry_id))
 - UPDATE/DELETE: only review author
 
 Helper:

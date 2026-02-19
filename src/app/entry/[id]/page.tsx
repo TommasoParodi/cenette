@@ -43,6 +43,14 @@ export default async function EntryPage({
     notFound();
   }
 
+  const { data: participantRows } = await supabase
+    .from("entry_participants")
+    .select("user_id")
+    .eq("entry_id", entryId);
+  const participantIds = (participantRows ?? []).map((p) => p.user_id);
+  const isParticipant =
+    participantIds.length === 0 || participantIds.includes(user.id);
+
   const { data: reviews } = await supabase
     .from("reviews")
     .select("id, user_id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location, created_at")
@@ -118,7 +126,7 @@ export default async function EntryPage({
             <h2 className="text-lg font-medium text-zinc-800 dark:text-zinc-200">
               Recensioni
             </h2>
-            {!myReview && (
+            {!myReview && isParticipant && (
               <Link
                 href={`/entry/${entryId}/review`}
                 className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
@@ -127,6 +135,11 @@ export default async function EntryPage({
               </Link>
             )}
           </div>
+          {!isParticipant && (
+            <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+              Solo i partecipanti all&apos;evento possono scrivere una recensione. Puoi visualizzare le recensioni degli altri.
+            </p>
+          )}
 
           {!reviews?.length ? (
             <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
@@ -134,7 +147,7 @@ export default async function EntryPage({
             </p>
           ) : (
             <ul className="space-y-3">
-              {!myReview && (
+              {!myReview && isParticipant && (
                 <li>
                   <Link
                     href={`/entry/${entryId}/review`}

@@ -44,6 +44,18 @@ export default async function EntryReviewPage({
     notFound();
   }
 
+  const { data: participantRows } = await supabase
+    .from("entry_participants")
+    .select("user_id")
+    .eq("entry_id", entryId);
+  const participantIds = (participantRows ?? []).map((p) => p.user_id);
+  const isParticipant =
+    participantIds.length === 0 || participantIds.includes(user.id);
+
+  if (!isParticipant) {
+    redirect(`/entry/${entryId}`);
+  }
+
   const { data: myReview } = await supabase
     .from("reviews")
     .select("id, rating_overall, comment, rating_cost, rating_service, rating_food, rating_location")
