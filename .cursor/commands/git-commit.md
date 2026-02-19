@@ -28,11 +28,8 @@ Rules:
 - Do not be generic
 - Prefer semantic intent over literal changes
 
-5) Show me the commit message BEFORE committing
-
-6) After confirmation:
+5) Esegui il commit con il messaggio generato
 Run:
 git commit -m "<generated_message>"
 
-NEVER push.
-NEVER run git push.
+NON fare mai push: non eseguire mai git push.
