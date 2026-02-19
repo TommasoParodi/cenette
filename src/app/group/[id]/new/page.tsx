@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { CreateEntryForm } from "./CreateEntryForm";
+import { EntryForm } from "@/components/EntryForm";
 
 export default async function NewEntryPage({
   params,
@@ -70,7 +70,8 @@ export default async function NewEntryPage({
         </header>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-          <CreateEntryForm
+          <EntryForm
+            mode="create"
             groupId={groupId}
             members={membersWithProfile}
             currentUserId={user.id}

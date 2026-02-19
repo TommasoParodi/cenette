@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { EditEntryForm } from "./EditEntryForm";
+import { EntryForm } from "@/components/EntryForm";
 
 export default async function EntryEditPage({
   params,
@@ -31,7 +31,8 @@ export default async function EntryEditPage({
     notFound();
   }
 
-  const group = entry.groups as { id: string; name: string } | null;
+  const rawGroups = entry.groups as { id: string; name: string } | { id: string; name: string }[] | null;
+  const group = Array.isArray(rawGroups) ? rawGroups[0] ?? null : rawGroups;
   if (!group) {
     notFound();
   }
@@ -105,7 +106,8 @@ export default async function EntryEditPage({
         </header>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-          <EditEntryForm
+          <EntryForm
+            mode="edit"
             entryId={entryId}
             defaultTitle={entry.title}
             defaultType={entry.type as "HOME" | "OUT"}
