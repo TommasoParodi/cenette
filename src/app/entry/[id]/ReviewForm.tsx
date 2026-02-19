@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { createOrUpdateReview } from "@/server-actions/entries";
 
 type Props = {
@@ -49,8 +50,7 @@ function RatingInput({
   );
 }
 
-export function ReviewForm({
-  entryId,
+function ReviewFormContent({
   voteMode,
   initialRating,
   initialComment,
@@ -59,19 +59,21 @@ export function ReviewForm({
   initialRatingFood,
   initialRatingLocation,
   initialPhotoUrl,
-}: Props) {
-  const [state, formAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      const result = await createOrUpdateReview(entryId, formData);
-      if (result?.error) return result.error;
-      return null;
-    },
-    null as string | null
-  );
+  state,
+}: Props & { state: string | null }) {
+  const { pending } = useFormStatus();
   const isDetailed = voteMode === "DETAILED";
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <>
+      {pending && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 dark:bg-zinc-900/80"
+          aria-hidden="true"
+        >
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-400" />
+        </div>
+      )}
       <div>
         <label
           htmlFor="rating_overall"
@@ -167,10 +169,32 @@ export function ReviewForm({
       )}
       <button
         type="submit"
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        disabled={pending}
+        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
       >
-        {initialRating != null ? "Aggiorna recensione" : "Salva recensione"}
+        {pending
+          ? "Salvataggio…"
+          : initialRating != null
+            ? "Aggiorna recensione"
+            : "Salva recensione"}
       </button>
+    </>
+  );
+}
+
+export function ReviewForm(props: Props) {
+  const [state, formAction] = useActionState(
+    async (_: unknown, formData: FormData) => {
+      const result = await createOrUpdateReview(props.entryId, formData);
+      if (result?.error) return result.error;
+      return null;
+    },
+    null as string | null
+  );
+
+  return (
+    <form action={formAction} className="relative flex flex-col gap-4">
+      <ReviewFormContent {...props} state={state} />
     </form>
   );
 }

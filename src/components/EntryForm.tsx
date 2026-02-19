@@ -187,7 +187,15 @@ export function EntryForm(props: EntryFormProps) {
     : `Aggiungi foto (max ${MAX_PHOTOS - serverPhotos.length}) — caricate subito, senza salvare il form`;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="relative flex flex-col gap-4">
+      {pending && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 dark:bg-zinc-900/80"
+          aria-hidden="true"
+        >
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-400" />
+        </div>
+      )}
       <input
         type="text"
         name="title"
