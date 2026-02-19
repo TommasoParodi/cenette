@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { LoginButton } from "./LoginButton";
+import { AuthForm } from "./AuthForm";
 
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
@@ -14,7 +14,7 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <LoginButton />
+      <AuthForm />
     </main>
   );
 }
