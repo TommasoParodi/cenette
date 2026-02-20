@@ -28,7 +28,8 @@ export default async function EntryReviewPage({
     notFound();
   }
 
-  const group = entry.groups as { id: string; name: string } | null;
+  const rawGroups = entry.groups as { id: string; name: string } | { id: string; name: string }[] | null;
+  const group = Array.isArray(rawGroups) ? rawGroups[0] ?? null : rawGroups;
   if (!group) {
     notFound();
   }
