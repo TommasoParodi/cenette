@@ -50,10 +50,16 @@ function formatDateForInput(iso: string): string {
 }
 
 const MAX_PHOTOS = 3;
+
+function getInitials(name: string): string {
+  if (!name?.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 const inputClass =
-  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100";
-const fileInputClass =
-  "min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600";
+  "w-full rounded-xl border border-separator-line bg-surface px-3 py-2.5 text-foreground placeholder-placeholder focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
 
 export function EntryForm(props: EntryFormProps) {
   const isCreate = props.mode === "create";
@@ -70,11 +76,12 @@ export function EntryForm(props: EntryFormProps) {
 
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [type, setType] = useState<"HOME" | "OUT">(defaultType ?? "HOME");
+  const [voteMode, setVoteMode] = useState<"SIMPLE" | "DETAILED">(defaultVoteMode ?? "SIMPLE");
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
-  const [hasPhotoSelected, setHasPhotoSelected] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -87,16 +94,17 @@ export function EntryForm(props: EntryFormProps) {
     };
   }, [previewUrls]);
 
-  async function handleAddPhotos() {
+  async function handleAddPhotos(filesFromInput?: FileList | null) {
     const input = photoInputRef.current;
-    if (!input?.files?.length) {
-      setPhotoAddError("Seleziona almeno una foto.");
+    const rawFiles = filesFromInput ? Array.from(filesFromInput) : Array.from(input?.files ?? []);
+    if (!rawFiles.length) {
+      if (!filesFromInput) setPhotoAddError("Seleziona almeno una foto.");
       return;
     }
     setPhotoAddError(null);
     setPhotoAddPending(true);
     const remaining = Math.max(0, MAX_PHOTOS - totalPhotoCount);
-    const raw = Array.from(input.files).slice(0, remaining);
+    const raw = rawFiles.slice(0, remaining);
     if (raw.length === 0) {
       setPhotoAddError("Puoi aggiungere al massimo 3 foto.");
       setPhotoAddPending(false);
@@ -108,17 +116,14 @@ export function EntryForm(props: EntryFormProps) {
         const newUrls = compressed.map((f) => URL.createObjectURL(f));
         setPendingPhotos((prev) => [...prev, ...compressed].slice(0, MAX_PHOTOS));
         setPreviewUrls((prev) => [...prev, ...newUrls].slice(0, MAX_PHOTOS));
-        input.value = "";
-        setHasPhotoSelected(false);
+        if (input) input.value = "";
       } else {
         const formData = new FormData();
         for (const f of compressed) formData.append("photos", f);
         const result = await uploadEntryPhotos(entryId!, formData);
-        if (result?.error) {
-          setPhotoAddError(result.error);
-        } else if (result?.success) {
-          input.value = "";
-          setHasPhotoSelected(false);
+        if (result?.error) setPhotoAddError(result.error);
+        else if (result?.success) {
+          if (input) input.value = "";
           router.refresh();
         }
       }
@@ -126,6 +131,11 @@ export function EntryForm(props: EntryFormProps) {
       setPhotoAddError(isCreate ? "Errore durante la compressione." : "Errore di caricamento.");
     }
     setPhotoAddPending(false);
+  }
+
+  function handlePhotoInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (files?.length) handleAddPhotos(files);
   }
 
   function handleRemovePendingPhoto(index: number) {
@@ -181,179 +191,136 @@ export function EntryForm(props: EntryFormProps) {
     }
   }
 
-  const submitLabel = isCreate ? (pending ? "Creazione in corso…" : "Crea evento") : (pending ? "Salvataggio…" : "Salva modifiche");
-  const photoHint = isCreate
-    ? `Aggiungi foto (max ${MAX_PHOTOS - pendingPhotos.length}) — verranno caricate alla creazione dell'evento`
-    : `Aggiungi foto (max ${MAX_PHOTOS - serverPhotos.length}) — caricate subito, senza salvare il form`;
+  const submitLabel = isCreate ? (pending ? "Creazione in corso…" : "Salva evento") : (pending ? "Salvataggio…" : "Salva modifiche");
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="relative flex flex-col gap-6">
       {pending && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 dark:bg-zinc-900/80"
-          aria-hidden="true"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-400" />
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/80" aria-hidden>
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-separator-line border-t-accent" />
         </div>
       )}
-      <input
-        type="text"
-        name="title"
-        placeholder="Titolo evento"
-        required
-        defaultValue={defaultTitle}
-        className={inputClass}
-      />
-      <select name="type" required defaultValue={defaultType} className={inputClass}>
-        <option value="HOME">Cena a casa</option>
-        <option value="OUT">Uscita / Fuori</option>
-      </select>
-      <div>
-        <label htmlFor="vote_mode" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
-          Modalità voto recensioni
-        </label>
-        <select
-          id="vote_mode"
-          name="vote_mode"
-          required
-          defaultValue={defaultVoteMode}
-          className={`w-full ${inputClass}`}
-        >
-          <option value="SIMPLE">Voto semplice (solo voto 1–10)</option>
-          <option value="DETAILED">Voto dettagliato (costo, servizio, …)</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="happened_at" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
-          Data
-        </label>
+
+      <input type="hidden" name="type" value={type} />
+      <input type="hidden" name="vote_mode" value={voteMode} />
+
+      <section>
+        <label htmlFor="title" className="mb-2 block text-sm font-semibold text-foreground">Titolo</label>
         <input
-          id="happened_at"
-          type="date"
-          name="happened_at"
+          id="title"
+          type="text"
+          name="title"
+          placeholder="es. Carbonara da Marco"
           required
-          defaultValue={defaultHappenedAt}
+          defaultValue={defaultTitle}
           className={inputClass}
         />
-      </div>
-      <div>
-        <label htmlFor="description" className="mb-1 block text-sm text-zinc-600 dark:text-zinc-400">
-          Descrizione (opzionale)
-        </label>
+      </section>
+
+      <section>
+        <label htmlFor="happened_at" className="mb-2 block text-sm font-semibold text-foreground">Data</label>
+        <div className="relative">
+          <input
+            id="happened_at"
+            type="date"
+            name="happened_at"
+            required
+            defaultValue={defaultHappenedAt}
+            className={`${inputClass} pr-10`}
+          />
+          <svg className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      </section>
+
+      <section>
+        <span className="mb-2 block text-sm font-semibold text-foreground">Tipo</span>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setType("HOME")}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+              type === "HOME" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            A casa
+          </button>
+          <button
+            type="button"
+            onClick={() => setType("OUT")}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+              type === "OUT" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Fuori
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <span className="mb-2 block text-sm font-semibold text-foreground">Modalità voto</span>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setVoteMode("SIMPLE")}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+              voteMode === "SIMPLE" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+            Semplice
+          </button>
+          <button
+            type="button"
+            onClick={() => setVoteMode("DETAILED")}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+              voteMode === "DETAILED" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+            }`}
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+            </svg>
+            Dettagliato
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <label htmlFor="description" className="mb-2 block text-sm font-semibold text-foreground">Descrizione</label>
         <textarea
           id="description"
           name="description"
           rows={3}
-          placeholder="Dove, cosa avete mangiato..."
+          placeholder="Racconta qualcosa su questa cena..."
           defaultValue={defaultDescription}
-          className={`w-full ${inputClass}`}
+          className={inputClass}
         />
-      </div>
-      <div>
-        <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Foto evento (max 3)
-        </span>
-        {serverPhotos.length > 0 && (
-          <ul className="mb-3 flex flex-wrap gap-2">
-            {serverPhotos.map(({ id, url }) => (
-              <li
-                key={id}
-                className="relative aspect-square w-24 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveServerPhoto(id)}
-                  className="absolute right-1 top-1 rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700"
-                  title="Rimuovi foto"
-                >
-                  Rimuovi
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {pendingPhotos.length > 0 && (
-          <ul className="mb-3 flex flex-wrap gap-2">
-            {previewUrls.map((url, i) => (
-              <li
-                key={`pending-${i}`}
-                className="relative aspect-square w-24 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => handleRemovePendingPhoto(i)}
-                  className="absolute right-1 top-1 rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700"
-                  title="Rimuovi foto"
-                >
-                  Rimuovi
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {canAddMorePhotos && (
-          <>
-            <label htmlFor="entry-photos" className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
-              {photoHint}
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={photoInputRef}
-                id="entry-photos"
-                type="file"
-                name="photos"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                multiple
-                onChange={(e) => setHasPhotoSelected((e.target.files?.length ?? 0) > 0)}
-                className={fileInputClass}
-              />
-              <button
-                type="button"
-                onClick={handleAddPhotos}
-                disabled={!hasPhotoSelected || photoAddPending}
-                className="shrink-0 rounded-lg bg-zinc-800 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
-              >
-                {photoAddPending ? "Caricamento…" : "Carica foto"}
-              </button>
-            </div>
-            {photoAddError && (
-              <p className="mt-1 text-xs text-red-600 dark:text-red-400">{photoAddError}</p>
-            )}
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Seleziona una o più foto e clicca &quot;Carica foto&quot;. Verranno compresse (~400 KB
-              ciascuna).
-            </p>
-          </>
-        )}
-      </div>
-      <div>
-        <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Partecipanti all&apos;evento (solo loro potranno scrivere una recensione)
-        </span>
+      </section>
+
+      <section>
+        <span className="mb-2 block text-sm font-semibold text-foreground">Partecipanti</span>
         <ul className="flex flex-wrap gap-2">
           {props.members.map((m) => {
             const isCreator = m.id === creatorId;
-            const defaultChecked =
-              isCreate ? isCreator : (defaultParticipantIds?.includes(m.id) ?? false) || isCreator;
+            const defaultChecked = isCreate ? isCreator : (defaultParticipantIds?.includes(m.id) ?? false) || isCreator;
+            const initials = getInitials(m.displayName);
             return (
               <li key={m.id}>
                 <label
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm dark:bg-zinc-800 ${
-                    isCreator
-                      ? "cursor-default border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40"
-                      : "cursor-pointer border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                  className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${
+                    isCreator ? "cursor-default bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted has-[:checked]:bg-accent-strong has-[:checked]:text-accent-foreground"
                   }`}
-                  title={
-                    isCreator
-                      ? isCreate
-                        ? "L'organizzatore è sempre partecipante"
-                        : "L'organizzatore non può essere rimosso"
-                      : undefined
-                  }
+                  title={isCreator ? "L'organizzatore è sempre partecipante" : undefined}
                 >
                   <input
                     type="checkbox"
@@ -361,25 +328,90 @@ export function EntryForm(props: EntryFormProps) {
                     value={m.id}
                     defaultChecked={defaultChecked}
                     disabled={isCreator}
-                    className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-700"
+                    className="peer sr-only"
                   />
+                  <span className="font-medium">{initials}</span>
                   {m.displayName}
-                  {isCreator && (
-                    <span className="text-xs text-amber-700 dark:text-amber-400">
-                      (organizzatore)
-                    </span>
-                  )}
                 </label>
               </li>
             );
           })}
         </ul>
-      </div>
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      </section>
+
+      <section>
+        <span className="mb-2 block text-sm font-semibold text-foreground">Foto (max 3)</span>
+        {(serverPhotos.length > 0 || previewUrls.length > 0) && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {serverPhotos.map(({ id, url }) => (
+              <div key={id} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="h-24 w-24 rounded-xl border border-separator-line object-cover" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveServerPhoto(id)}
+                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow"
+                  aria-label="Rimuovi foto"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            {previewUrls.map((url, i) => (
+              <div key={`p-${i}`} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="h-24 w-24 rounded-xl border border-separator-line object-cover" />
+                <button
+                  type="button"
+                  onClick={() => handleRemovePendingPhoto(i)}
+                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow"
+                  aria-label="Rimuovi foto"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {canAddMorePhotos && (
+          <>
+            <input
+              ref={photoInputRef}
+              id="entry-photos"
+              type="file"
+              name="photos"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="sr-only"
+              aria-label="Aggiungi foto"
+              onChange={handlePhotoInputChange}
+            />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={photoAddPending}
+              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-separator-line bg-surface py-8 text-text-secondary transition hover:border-accent/50 hover:bg-avatar-member-bg/30 disabled:opacity-50"
+            >
+              <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs font-medium">Aggiungi foto</span>
+              <span className="text-xs text-text-secondary">JPEG, PNG, WebP o GIF, max 5 MB</span>
+            </button>
+            {photoAddError && <p className="mt-1 text-xs text-red-600">{photoAddError}</p>}
+          </>
+        )}
+      </section>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="w-full rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
       >
         {submitLabel}
       </button>

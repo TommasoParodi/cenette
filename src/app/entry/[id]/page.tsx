@@ -308,10 +308,10 @@ export default async function EntryPage({
       </div>
 
       {!myReview && isParticipant && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-separator-line bg-surface p-4">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
           <Link
             href={`/entry/${entryId}/review`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90"
+            className="flex items-center justify-center gap-2 rounded-xl bg-accent-strong px-6 py-3 text-sm font-medium text-accent-foreground shadow-lg transition hover:opacity-90"
           >
             <span className="text-lg leading-none" aria-hidden>+</span>
             Aggiungi recensione

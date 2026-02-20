@@ -39,7 +39,7 @@ function SliderRow({
         onChange={(e) => setValue(Number(e.target.value))}
         className="h-2 flex-1 appearance-none rounded-full bg-surface-muted [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-accent"
         style={{
-          background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(value / 10) * 100}%, var(--surface-muted) ${(value / 10) * 100}%, var(--surface-muted) 100%)`,
+          background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((value - 1) / 9) * 100}%, var(--surface-muted) ${((value - 1) / 9) * 100}%, var(--surface-muted) 100%)`,
         }}
       />
       <span className="w-6 shrink-0 text-right text-sm font-medium text-accent">{value}</span>
