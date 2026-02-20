@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Topbar } from "@/components/Topbar";
 import { EntryForm } from "@/components/EntryForm";
 
 export default async function NewEntryPage({
@@ -57,20 +57,11 @@ export default async function NewEntryPage({
   return (
     <main className="min-h-screen pb-8">
       <div className="mx-auto max-w-2xl">
-        <header className="flex items-center gap-3 border-b border-separator-line bg-background px-4 py-3">
-          <Link
-            href={`/group/${groupId}`}
-            className="flex shrink-0 items-center justify-center text-foreground"
-            aria-label="Indietro"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7 7" />
-            </svg>
-          </Link>
-          <h1 className="min-w-0 flex-1 text-lg font-semibold text-foreground">
-            Nuovo evento
-          </h1>
-        </header>
+        <Topbar
+          showBack
+          backHref={`/group/${groupId}`}
+          title="Nuovo evento"
+        />
 
         <div className="px-4 pt-6">
           <EntryForm

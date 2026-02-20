@@ -342,7 +342,7 @@ export function EntryForm(props: EntryFormProps) {
       <section>
         <span className="mb-2 block text-sm font-semibold text-foreground">Foto (max 3)</span>
         {(serverPhotos.length > 0 || previewUrls.length > 0) && (
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap justify-center gap-2">
             {serverPhotos.map(({ id, url }) => (
               <div key={id} className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

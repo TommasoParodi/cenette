@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Topbar } from "@/components/Topbar";
 import { EntryImageCarousel } from "./EntryImageCarousel";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
@@ -128,30 +129,23 @@ export default async function EntryPage({
   return (
     <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
-        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-separator-line bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <Link
-            href={`/group/${entry.group_id}`}
-            className="flex shrink-0 items-center justify-center text-foreground"
-            aria-label="Indietro"
-          >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7 7" />
-            </svg>
-          </Link>
-          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold text-foreground">
-            {entry.title}
-          </h1>
-          {entry.created_by === user.id && (
-            <Link
-              href={`/entry/${entryId}/edit`}
-              className="shrink-0 text-sm font-medium text-accent hover:underline"
-            >
-              Modifica
-            </Link>
-          )}
-        </header>
+        <Topbar
+          showBack
+          backHref={`/group/${entry.group_id}`}
+          title={entry.title}
+          right={
+            entry.created_by === user.id ? (
+              <Link
+                href={`/entry/${entryId}/edit`}
+                className="text-sm font-medium text-accent hover:underline"
+              >
+                Modifica
+              </Link>
+            ) : undefined
+          }
+        />
 
-        <div className="overflow-hidden rounded-b-2xl bg-surface shadow-sm">
+        <div className="mt-3 overflow-hidden rounded-b-2xl bg-surface shadow-sm">
           <EntryImageCarousel imageUrls={photoUrls} />
         </div>
 

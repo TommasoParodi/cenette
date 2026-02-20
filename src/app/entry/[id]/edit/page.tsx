@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Topbar } from "@/components/Topbar";
 import { EntryForm } from "@/components/EntryForm";
 
 export default async function EntryEditPage({
@@ -88,24 +88,16 @@ export default async function EntryEditPage({
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
+    <main className="min-h-screen pb-8">
       <div className="mx-auto max-w-2xl">
-        <header className="mb-6">
-          <Link
-            href={`/entry/${entryId}`}
-            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
-          >
-            ← {entry.title}
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-            Modifica evento
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {group.name}
-          </p>
-        </header>
+        <Topbar
+          showBack
+          backHref={`/entry/${entryId}`}
+          title="Modifica evento"
+        />
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="px-4 pt-6">
+          <section className="rounded-2xl bg-surface p-4 shadow-sm">
           <EntryForm
             mode="edit"
             entryId={entryId}
@@ -119,7 +111,8 @@ export default async function EntryEditPage({
             creatorId={entry.created_by}
             currentPhotos={currentPhotos}
           />
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );

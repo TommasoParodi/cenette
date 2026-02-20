@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { Topbar } from "@/components/Topbar";
 import LogoutButton from "./LogoutButton";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
@@ -80,26 +81,30 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen p-6 pb-24">
       <div className="mx-auto max-w-2xl">
-        <header className="mb-8 flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="text-2xl font-semibold text-brand-header"
-            style={{ fontFamily: "var(--font-playfair), serif" }}
-          >
-            Cenette
-          </Link>
-          <div className="flex items-center gap-3">
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-avatar-user-bg text-sm font-medium text-foreground"
-              title={profile?.display_name ?? user.email ?? ""}
+        <Topbar
+          title={
+            <Link
+              href="/dashboard"
+              className="text-xl font-semibold text-brand-header"
+              style={{ fontFamily: "var(--font-playfair), serif" }}
             >
-              {userInitials}
-            </span>
-            <LogoutButton />
-          </div>
-        </header>
+              Cenette
+            </Link>
+          }
+          right={
+            <>
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-avatar-user-bg text-sm font-medium text-foreground"
+                title={profile?.display_name ?? user.email ?? ""}
+              >
+                {userInitials}
+              </span>
+              <LogoutButton />
+            </>
+          }
+        />
 
-        <section className="mb-8">
+        <section className="mt-6 mb-8">
           <h2 className="mb-4 text-lg font-medium text-foreground">
             I tuoi gruppi
           </h2>
