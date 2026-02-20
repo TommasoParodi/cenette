@@ -20,8 +20,10 @@ export async function createGroup(formData: FormData) {
     return { error: error.message || "Impossibile creare il gruppo." };
   }
 
+  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   revalidatePath("/dashboard");
-  return { data: data ?? undefined, error: null };
+  revalidatePath("/dashboard/new");
+  return { data: groupId ? { groupId } : undefined, error: null };
 }
 
 export async function joinGroup(formData: FormData) {
@@ -44,6 +46,8 @@ export async function joinGroup(formData: FormData) {
     return { error: error.message || "Impossibile entrare nel gruppo." };
   }
 
+  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   revalidatePath("/dashboard");
-  return { data: data ?? undefined, error: null };
+  revalidatePath("/dashboard/new");
+  return { data: groupId ? { groupId } : undefined, error: null };
 }

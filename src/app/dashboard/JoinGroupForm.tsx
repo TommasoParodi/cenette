@@ -1,21 +1,41 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { joinGroup } from "@/server-actions/groups";
 
-export function JoinGroupForm() {
+const REDIRECT_PREFIX = "redirect:";
+
+export function JoinGroupForm({
+  redirectToGroup = false,
+}: { redirectToGroup?: boolean } = {}) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
       const result = await joinGroup(formData);
       if (result.error) return result.error;
+      if (redirectToGroup) {
+        if (result.data?.groupId) return `${REDIRECT_PREFIX}${result.data.groupId}`;
+        return `${REDIRECT_PREFIX}dashboard`;
+      }
       return null;
     },
     null as string | null
   );
 
+  useEffect(() => {
+    if (typeof state === "string" && state.startsWith(REDIRECT_PREFIX)) {
+      const path = state.slice(REDIRECT_PREFIX.length);
+      router.push(path === "dashboard" ? "/dashboard" : `/group/${path}`);
+    }
+  }, [state, router]);
+
+  const isRedirect = typeof state === "string" && state.startsWith(REDIRECT_PREFIX);
+  const errorMessage = typeof state === "string" && !isRedirect ? state : null;
+
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <h3 className="text-sm font-medium text-label">
         Entra con codice invito
       </h3>
       <input
@@ -24,14 +44,14 @@ export function JoinGroupForm() {
         placeholder="Codice (es. ABC12XYZ)"
         required
         maxLength={8}
-        className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono uppercase tracking-wider text-zinc-900 placeholder:normal-case placeholder:tracking-normal placeholder:text-zinc-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+        className="rounded-xl border border-separator-line bg-surface px-3 py-2 font-mono uppercase tracking-wider text-foreground placeholder-placeholder placeholder:normal-case placeholder:tracking-normal focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
       />
-      {state && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state}</p>
+      {errorMessage && (
+        <p className="text-sm text-red-600">{errorMessage}</p>
       )}
       <button
         type="submit"
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
       >
         Entra nel gruppo
       </button>
