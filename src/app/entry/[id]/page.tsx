@@ -1,6 +1,30 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { EntryImageCarousel } from "./EntryImageCarousel";
+
+function getInitials(name: string | null | undefined, fallback: string): string {
+  if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function formatEventDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const RATING_CATEGORIES = [
+  { key: "rating_food", label: "Cibo" },
+  { key: "rating_service", label: "Servizio" },
+  { key: "rating_cost", label: "Costo" },
+  { key: "rating_location", label: "Location" },
+] as const;
 
 export default async function EntryPage({
   params,
@@ -10,12 +34,8 @@ export default async function EntryPage({
   const { id: entryId } = await params;
   const supabase = await createSupabaseServerClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/");
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/");
 
   const { data: entry } = await supabase
     .from("entries")
@@ -23,15 +43,11 @@ export default async function EntryPage({
     .eq("id", entryId)
     .single();
 
-  if (!entry) {
-    notFound();
-  }
+  if (!entry) notFound();
 
   const rawGroups = entry.groups as { id: string; name: string } | { id: string; name: string }[] | null;
   const group = Array.isArray(rawGroups) ? rawGroups[0] ?? null : rawGroups;
-  if (!group) {
-    notFound();
-  }
+  if (!group) notFound();
 
   const { data: membership } = await supabase
     .from("group_members")
@@ -40,17 +56,14 @@ export default async function EntryPage({
     .eq("user_id", user.id)
     .single();
 
-  if (!membership) {
-    notFound();
-  }
+  if (!membership) notFound();
 
   const { data: participantRows } = await supabase
     .from("entry_participants")
     .select("user_id")
     .eq("entry_id", entryId);
   const participantIds = (participantRows ?? []).map((p) => p.user_id);
-  const isParticipant =
-    participantIds.length === 0 || participantIds.includes(user.id);
+  const isParticipant = participantIds.length === 0 || participantIds.includes(user.id);
 
   const { data: entryPhotos } = await supabase
     .from("entry_photos")
@@ -63,9 +76,7 @@ export default async function EntryPage({
     const bucket = "entry-photos";
     const expiresIn = 3600;
     for (const p of entryPhotos) {
-      const { data: signed } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(p.storage_path, expiresIn);
+      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(p.storage_path, expiresIn);
       if (signed?.signedUrl) photoUrls.push({ id: p.id, url: signed.signedUrl });
     }
   }
@@ -76,25 +87,18 @@ export default async function EntryPage({
     .eq("entry_id", entryId)
     .order("created_at", { ascending: false });
 
-  const userIds = [...new Set((reviews ?? []).map((r) => r.user_id))];
+  const allUserIds = [...new Set([...(reviews ?? []).map((r) => r.user_id), ...participantIds])];
   const { data: profiles } =
-    userIds.length > 0
-      ? await supabase
-          .from("profiles")
-          .select("id, display_name")
-          .in("id", userIds)
+    allUserIds.length > 0
+      ? await supabase.from("profiles").select("id, display_name").in("id", allUserIds)
       : { data: null };
 
   const displayNameByUserId = new Map<string, string>();
-  profiles?.forEach((p) => {
-    displayNameByUserId.set(p.id, p.display_name ?? "Utente");
-  });
+  profiles?.forEach((p) => displayNameByUserId.set(p.id, p.display_name ?? "Utente"));
 
   const myReview = reviews?.find((r) => r.user_id === user.id) ?? null;
   const otherReviews = reviews?.filter((r) => r.user_id !== user.id) ?? [];
-  const reviewsOrdered = myReview
-    ? [myReview, ...otherReviews]
-    : otherReviews;
+  const reviewsOrdered = myReview ? [myReview, ...otherReviews] : otherReviews;
 
   const reviewPhotoUrls = new Map<string, string>();
   const reviewPhotosWithPath = (reviews ?? []).filter((r) => r.photo_path);
@@ -102,189 +106,218 @@ export default async function EntryPage({
     const bucket = "review-photos";
     const expiresIn = 3600;
     for (const r of reviewPhotosWithPath) {
-      const { data: signed } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(r.photo_path!, expiresIn);
+      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(r.photo_path!, expiresIn);
       if (signed?.signedUrl) reviewPhotoUrls.set(r.id, signed.signedUrl);
     }
   }
 
+  const avgRating =
+    reviews?.length && reviews.length > 0
+      ? Math.round((reviews.reduce((a, r) => a + (r.rating_overall ?? 0), 0) / reviews.length) * 10) / 10
+      : null;
+
+  const participantsWithNames = participantIds.map((uid) => ({
+    id: uid,
+    name: displayNameByUserId.get(uid) ?? "Utente",
+    initials: getInitials(displayNameByUserId.get(uid), "?"),
+  }));
+
+  const isDetailed = (entry.vote_mode ?? "SIMPLE") === "DETAILED";
+  const isHome = entry.type === "HOME";
+
   return (
-    <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
-        <header className="mb-6">
+        <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-separator-line bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <Link
             href={`/group/${entry.group_id}`}
-            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+            className="flex shrink-0 items-center justify-center text-foreground"
+            aria-label="Indietro"
           >
-            ← {group.name}
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7 7" />
+            </svg>
           </Link>
-          <div className="mt-2 flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-                {entry.title}
-              </h1>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {entry.type === "HOME" ? "Cena a casa" : "Uscita"}
-                {" · "}
-                {new Date(entry.happened_at).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-                {" · "}
-                {(entry.vote_mode ?? "SIMPLE") === "DETAILED" ? "Voto dettagliato" : "Voto semplice"}
-              </p>
-            </div>
-            {entry.created_by === user.id && (
-              <Link
-                href={`/entry/${entryId}/edit`}
-                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >
-                Modifica evento
-              </Link>
-            )}
-          </div>
+          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold text-foreground">
+            {entry.title}
+          </h1>
+          {entry.created_by === user.id && (
+            <Link
+              href={`/entry/${entryId}/edit`}
+              className="shrink-0 text-sm font-medium text-accent hover:underline"
+            >
+              Modifica
+            </Link>
+          )}
         </header>
 
-        {entry.description && (
-          <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <p className="text-zinc-700 dark:text-zinc-300">{entry.description}</p>
-          </section>
-        )}
+        <div className="overflow-hidden rounded-b-2xl bg-surface shadow-sm">
+          <EntryImageCarousel imageUrls={photoUrls} />
+        </div>
 
-        {photoUrls.length > 0 && (
-          <section className="mb-6">
-            <h2 className="mb-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              Foto evento
-            </h2>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {photoUrls.map(({ id, url }) => (
-                <li key={id} className="aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-zinc-800 dark:text-zinc-200">
-              Recensioni
-            </h2>
-            {!myReview && isParticipant && (
-              <Link
-                href={`/entry/${entryId}/review`}
-                className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                Aggiungi recensione
-              </Link>
-            )}
-          </div>
-          {!isParticipant && (
-            <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
-              Solo i partecipanti all&apos;evento possono scrivere una recensione. Puoi visualizzare le recensioni degli altri.
-            </p>
+        <div className="px-4 pt-6">
+          {avgRating != null && (
+            <div className="flex justify-center">
+              <span className="inline-flex h-14 min-w-[3.5rem] items-center justify-center rounded-xl bg-accent-strong px-4 text-2xl font-semibold text-accent-foreground shadow-sm">
+                {avgRating.toFixed(1)}
+              </span>
+            </div>
           )}
 
-          {!reviews?.length ? (
-            <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
-              Nessuna recensione
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {!myReview && isParticipant && (
-                <li>
-                  <Link
-                    href={`/entry/${entryId}/review`}
-                    className="block rounded-xl border border-dashed border-zinc-300 p-6 text-center text-zinc-600 dark:border-zinc-600 dark:text-zinc-400"
-                  >
-                    Aggiungi la tua recensione
-                  </Link>
-                </li>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-text-secondary">
+            <span className="flex items-center gap-1.5">
+              <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {formatEventDate(entry.happened_at)}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-avatar-member-bg px-2.5 py-0.5 text-foreground">
+              {isHome ? (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              ) : (
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               )}
-              {reviewsOrdered.map((r) => {
-                const isMine = r.user_id === user.id;
-                const authorName =
-                  displayNameByUserId.get(r.user_id) ?? "Utente";
-                return (
-                  <li
-                    key={r.id}
-                    className={
-                      isMine
-                        ? "rounded-xl border-2 border-amber-400 bg-white p-4 dark:border-amber-500 dark:bg-zinc-900"
-                        : "rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900"
-                    }
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex w-full items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                          {authorName}
-                        </span>
-                        {isMine && (
-                          <Link
-                            href={`/entry/${entryId}/review`}
-                            className="text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                          >
-                            Modifica
-                          </Link>
-                        )}
-                      </div>
-                      <div
-                        className={
-                          reviewPhotoUrls.get(r.id)
-                            ? "grid gap-4 sm:grid-cols-[7fr_minmax(0,3fr)]"
-                            : ""
-                        }
-                      >
-                        <div className="min-w-0">
-                          <span className="mt-1 block font-medium text-zinc-900 dark:text-zinc-100">
-                            ★ {r.rating_overall}/10
+              {isHome ? "A casa" : "Fuori"}
+            </span>
+          </div>
+
+          {entry.description && (
+            <section className="mt-8">
+              <h2 className="mb-2 text-sm font-semibold text-foreground">Descrizione</h2>
+              <p className="text-sm leading-relaxed text-text-secondary">{entry.description}</p>
+            </section>
+          )}
+
+          {participantsWithNames.length > 0 && (
+            <section className="mt-8">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Partecipanti</h2>
+              <ul className="space-y-2">
+                {participantsWithNames.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
+                      {p.initials}
+                    </span>
+                    <span className="text-sm text-foreground">{p.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                Recensioni {reviews?.length ? `(${reviews.length})` : ""}
+              </h2>
+            </div>
+            {!isParticipant && (
+              <p className="mb-4 text-xs text-text-secondary">
+                Solo i partecipanti possono scrivere una recensione.
+              </p>
+            )}
+
+            {!reviews?.length ? (
+              <p className="rounded-xl border border-dashed border-separator-line bg-surface p-6 text-center text-sm text-text-secondary">
+                Nessuna recensione
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {reviewsOrdered.map((r) => {
+                  const isMine = r.user_id === user.id;
+                  const authorName = displayNameByUserId.get(r.user_id) ?? "Utente";
+                  const authorInitials = getInitials(displayNameByUserId.get(r.user_id), "?");
+                  const reviewPhotoUrl = reviewPhotoUrls.get(r.id);
+
+                  return (
+                    <li
+                      key={r.id}
+                      className="rounded-xl bg-surface p-4 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
+                            {authorInitials}
                           </span>
-                          {(entry.vote_mode ?? "SIMPLE") === "DETAILED" &&
-                            "rating_cost" in r &&
-                            r.rating_cost != null && (
-                              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                                Costo {r.rating_cost}
-                                {" · "}
-                                Servizio {r.rating_service}
-                                {" · "}
-                                Cibo {r.rating_food}
-                                {" · "}
-                                Location {r.rating_location}
-                              </p>
-                            )}
-                          {r.comment && (
-                            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                              {r.comment}
-                            </p>
-                          )}
+                          <span className="truncate text-sm font-medium text-foreground">{authorName}</span>
                         </div>
-                      {reviewPhotoUrls.get(r.id) && (
-                        <div className="flex shrink-0 items-center justify-center pl-4 sm:min-w-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={reviewPhotoUrls.get(r.id)!}
-                            alt="Foto recensione"
-                            className="max-h-32 w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-600 sm:max-h-40"
-                          />
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-strong text-sm font-semibold text-accent-foreground">
+                          {(r.rating_overall ?? 0).toFixed(1)}
+                        </span>
+                      </div>
+
+                      {isDetailed && (
+                        <div className="mt-3 space-y-2">
+                          {RATING_CATEGORIES.map(({ key, label }) => {
+                            const value = (r as Record<string, number | null>)[key] ?? 0;
+                            return (
+                              <div key={key} className="flex items-center gap-2 text-xs">
+                                <span className="w-16 shrink-0 text-text-secondary">{label}</span>
+                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
+                                  <div
+                                    className="h-full rounded-full bg-accent"
+                                    style={{ width: `${(value / 10) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="w-6 shrink-0 text-right font-medium text-foreground">{value}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+
+                      {r.comment && (
+                        <p className="mt-3 text-sm text-text-secondary">{r.comment}</p>
+                      )}
+
+                      {reviewPhotoUrl && (
+                        <div className="mt-3">
+                          <a
+                            href={reviewPhotoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Foto recensione
+                          </a>
+                        </div>
+                      )}
+
+                      {isMine && (
+                        <Link
+                          href={`/entry/${entryId}/review`}
+                          className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
+                        >
+                          Modifica recensione
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
+
+      {!myReview && isParticipant && (
+        <div className="fixed bottom-0 left-0 right-0 border-t border-separator-line bg-surface p-4">
+          <Link
+            href={`/entry/${entryId}/review`}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90"
+          >
+            <span className="text-lg leading-none" aria-hidden>+</span>
+            Aggiungi recensione
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

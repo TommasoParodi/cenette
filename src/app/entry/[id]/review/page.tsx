@@ -75,24 +75,24 @@ export default async function EntryReviewPage({
   const isEdit = !!myReview;
 
   return (
-    <main className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
+    <main className="min-h-screen pb-8">
       <div className="mx-auto max-w-2xl">
-        <header className="mb-6">
+        <header className="flex items-center gap-3 border-b border-separator-line bg-background px-4 py-3">
           <Link
             href={`/entry/${entryId}`}
-            className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+            className="flex shrink-0 items-center justify-center text-foreground"
+            aria-label="Indietro"
           >
-            ← {entry.title}
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7 7" />
+            </svg>
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-            {isEdit ? "Modifica recensione" : "Scrivi la tua recensione"}
+          <h1 className="min-w-0 flex-1 text-lg font-semibold text-foreground">
+            {isEdit ? "Modifica recensione" : "Nuova recensione"}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            {group.name}
-          </p>
         </header>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="px-4 pt-6">
           <ReviewForm
             entryId={entryId}
             voteMode={(entry.vote_mode ?? "SIMPLE") as "SIMPLE" | "DETAILED"}
@@ -104,7 +104,7 @@ export default async function EntryReviewPage({
             initialRatingLocation={myReview?.rating_location}
             initialPhotoUrl={myReviewPhotoUrl}
           />
-        </section>
+        </div>
       </div>
     </main>
   );

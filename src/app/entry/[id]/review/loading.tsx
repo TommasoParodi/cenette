@@ -1,4 +1,4 @@
-export default function EntryLoading() {
+export default function ReviewLoading() {
   return (
     <main className="flex min-h-screen items-center justify-center">
       <div
