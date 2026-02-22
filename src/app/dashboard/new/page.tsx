@@ -11,14 +11,16 @@ export default async function NewGroupPage() {
   if (!user) redirect("/");
 
   return (
-    <main className="min-h-screen p-6 pb-24">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar showBack backHref="/dashboard" title="Nuovo gruppo" />
-        <p className="mt-4 text-sm text-text-secondary">
-          Crea un gruppo o entra con un codice invito
-        </p>
+        <div className="px-6 pt-6">
+          <p className="text-sm text-text-secondary">
+            Crea un gruppo o entra con un codice invito
+          </p>
 
-        <NewGroupSection />
+          <NewGroupSection />
+        </div>
       </div>
     </main>
   );

@@ -25,6 +25,7 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
@@ -36,12 +37,17 @@ export function AuthForm() {
 
   async function signInWithGoogle() {
     clearMessages();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
-    });
+    setGoogleLoading(true);
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${location.origin}/auth/callback`,
+        },
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -50,7 +56,7 @@ export function AuthForm() {
 
     if (mode === "register") {
       if (password !== confirmPassword) {
-        setConfirmError("Le password non coincidono.");
+        setConfirmError("Le password non corrispondono.");
         return;
       }
       if (!isPasswordValid(password)) {
@@ -130,12 +136,22 @@ export function AuthForm() {
 
   return (
     <div className="flex w-full max-w-[min(24rem,90vw)] flex-col">
-      <div className="space-y-6 rounded-2xl bg-surface p-8 shadow-lg">
+      <div
+        className={`relative space-y-6 rounded-2xl bg-surface p-8 shadow-lg transition-opacity ${
+          googleLoading ? "pointer-events-none select-none opacity-60" : ""
+        }`}
+        aria-busy={googleLoading}
+      >
         <button
           type="button"
           onClick={signInWithGoogle}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-separator-line bg-surface px-4 py-2.5 text-sm font-medium text-text-muted shadow-sm hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          disabled={googleLoading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-separator-line bg-surface px-4 py-2.5 text-sm font-medium text-text-muted shadow-sm hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-60"
         >
+          {googleLoading ? (
+            "Attendere…"
+          ) : (
+            <>
           <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
             <path
               fill="#4285F4"
@@ -155,6 +171,8 @@ export function AuthForm() {
             />
           </svg>
           Accedi con Google
+            </>
+          )}
         </button>
 
         <div className="relative">
@@ -169,7 +187,7 @@ export function AuthForm() {
         <form onSubmit={handleEmailSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-label">
-              Email
+              Email <span aria-hidden="true">*</span>
             </label>
             <input
               id="email"
@@ -184,13 +202,16 @@ export function AuthForm() {
           </div>
           <div>
             <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-label">
-              Password
+              Password <span aria-hidden="true">*</span>
             </label>
             <input
               id="password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (mode === "register" && confirmPassword && e.target.value === confirmPassword) setConfirmError(null);
+              }}
               placeholder={mode === "login" ? "La tua password" : "••••••••"}
               required
               autoComplete={mode === "login" ? "current-password" : "new-password"}
@@ -224,6 +245,13 @@ export function AuthForm() {
                   setConfirmPassword(e.target.value);
                   if (confirmError) setConfirmError(null);
                 }}
+                onBlur={() => {
+                  if (confirmPassword.trim() && password !== confirmPassword) {
+                    setConfirmError("Le password non corrispondono.");
+                  } else {
+                    setConfirmError(null);
+                  }
+                }}
                 placeholder="••••••••"
                 required
                 autoComplete="new-password"
@@ -245,7 +273,14 @@ export function AuthForm() {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              googleLoading ||
+              !email.trim() ||
+              !password.trim() ||
+              (mode === "register" && !confirmPassword.trim()) ||
+              (mode === "register" && password !== confirmPassword)
+            }
             className="mt-2 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-60"
           >
             {loading ? "Attendere…" : mode === "login" ? "Accedi" : "Registrati"}

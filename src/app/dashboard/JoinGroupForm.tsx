@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { joinGroup } from "@/server-actions/groups";
 
@@ -12,12 +12,12 @@ function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: bool
   return null;
 }
 
-function SubmitButton() {
+function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabledWhenEmpty}
       className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-70"
     >
       {pending ? "Attendere…" : "Entra nel gruppo"}
@@ -29,6 +29,7 @@ export function JoinGroupForm({
   redirectToGroup = false,
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
+  const [inviteCode, setInviteCode] = useState("");
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
       const result = await joinGroup(formData);
@@ -47,11 +48,13 @@ export function JoinGroupForm({
         <input type="hidden" name="redirect_to_dashboard" value="1" />
       )}
       <h3 className="text-sm font-medium text-label">
-        Entra con codice invito
+        Entra con codice invito <span className="text-red-600" aria-hidden="true">*</span>
       </h3>
       <input
         type="text"
         name="invite_code"
+        value={inviteCode ?? ""}
+        onChange={(e) => setInviteCode(e.target.value)}
         placeholder="Codice (es. ABC12XYZ)"
         required
         maxLength={8}
@@ -60,7 +63,7 @@ export function JoinGroupForm({
       {errorMessage && (
         <p className="text-sm text-red-600">{errorMessage}</p>
       )}
-      <SubmitButton />
+      <SubmitButton disabledWhenEmpty={!inviteCode.trim()} />
     </form>
   );
 }

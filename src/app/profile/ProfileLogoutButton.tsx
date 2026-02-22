@@ -28,6 +28,7 @@ export default function ProfileLogoutButton() {
         message="Sei sicuro di voler uscire?"
         confirmLabel="Esci"
         onConfirm={handleConfirm}
+        closeOnConfirm={false}
       />
     </>
   );

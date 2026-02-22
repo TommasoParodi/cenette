@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -13,6 +14,8 @@ export type ConfirmDialogProps = {
   onConfirm: () => void | Promise<void>;
   /** Se true, il pulsante di conferma è rosso (azioni distruttive) */
   destructive?: boolean;
+  /** Se false, il dialog non si chiude dopo onConfirm (es. logout: resta aperto con loading fino al redirect). Default true. */
+  closeOnConfirm?: boolean;
 };
 
 export function ConfirmDialog({
@@ -24,6 +27,7 @@ export function ConfirmDialog({
   cancelLabel = "Annulla",
   onConfirm,
   destructive = false,
+  closeOnConfirm = true,
 }: ConfirmDialogProps) {
   const [pending, setPending] = useState(false);
 
@@ -31,11 +35,11 @@ export function ConfirmDialog({
     setPending(true);
     try {
       await Promise.resolve(onConfirm());
-      onClose();
+      if (closeOnConfirm) onClose();
     } catch {
       // errore gestito dal chiamante
     } finally {
-      setPending(false);
+      if (closeOnConfirm) setPending(false);
     }
   };
 
@@ -53,9 +57,18 @@ export function ConfirmDialog({
       onClick={handleBackdropClick}
     >
       <div
-        className="w-full max-w-sm rounded-2xl border border-separator-line bg-surface p-5 shadow-xl"
+        className="relative w-full max-w-sm rounded-2xl border border-separator-line bg-surface p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
+        {pending && (
+          <div
+            className="absolute inset-0 flex items-center justify-center rounded-2xl bg-surface/90"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <LoadingSpinner />
+          </div>
+        )}
         <h2 id="confirm-dialog-title" className="text-lg font-semibold text-foreground">
           {title}
         </h2>
