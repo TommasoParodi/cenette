@@ -1,41 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { FormCard } from "@/components/FormCard";
 import { CreateGroupForm } from "./CreateGroupForm";
 import { JoinGroupForm } from "./JoinGroupForm";
 
 type LoadingType = "create" | "join" | null;
-
-function CardWrapper({
-  disabled,
-  isLoading,
-  children,
-}: {
-  disabled: boolean;
-  isLoading: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`relative rounded-2xl bg-surface p-4 shadow-sm transition-opacity ${
-        disabled ? "pointer-events-none opacity-50" : ""
-      }`}
-    >
-      {children}
-      {isLoading && (
-        <div
-          className="absolute inset-0 flex items-center justify-center rounded-2xl bg-surface/80"
-          aria-hidden
-        >
-          <div
-            className="h-10 w-10 animate-spin rounded-full border-2 border-separator-line border-t-accent"
-            aria-hidden
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function NewGroupSection() {
   const [loadingType, setLoadingType] = useState<LoadingType>(null);
@@ -50,18 +20,18 @@ export function NewGroupSection() {
 
   return (
     <div className="mt-6 flex flex-col gap-6">
-      <CardWrapper
+      <FormCard
         disabled={loadingType !== null && loadingType !== "create"}
         isLoading={loadingType === "create"}
       >
         <CreateGroupForm redirectToGroup onPendingChange={handleCreatePending} />
-      </CardWrapper>
-      <CardWrapper
+      </FormCard>
+      <FormCard
         disabled={loadingType !== null && loadingType !== "join"}
         isLoading={loadingType === "join"}
       >
         <JoinGroupForm redirectToGroup onPendingChange={handleJoinPending} />
-      </CardWrapper>
+      </FormCard>
     </div>
   );
 }

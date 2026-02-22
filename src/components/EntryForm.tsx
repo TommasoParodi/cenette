@@ -9,6 +9,7 @@ import {
   uploadEntryPhotos,
 } from "@/server-actions/entries";
 import { compressPhotoFiles } from "@/lib/compress-photos";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export type EntryFormMember = { id: string; displayName: string };
 export type EntryFormPhotoItem = { id: string; url: string };
@@ -82,7 +83,9 @@ export function EntryForm(props: EntryFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
+  const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
 
   const totalPhotoCount = isCreate ? pendingPhotos.length : serverPhotos.length;
@@ -164,11 +167,11 @@ export function EntryForm(props: EntryFormProps) {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function performSubmit() {
+    const form = formRef.current;
+    if (!form) return;
     setError(null);
     setPending(true);
-    const form = e.currentTarget;
     const formData = new FormData(form);
     const newFormData = new FormData();
     for (const [key, value] of formData.entries()) {
@@ -191,10 +194,20 @@ export function EntryForm(props: EntryFormProps) {
     }
   }
 
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const voteModeChanged = !isCreate && voteMode !== defaultVoteMode;
+    if (voteModeChanged) {
+      setVoteModeConfirmOpen(true);
+      return;
+    }
+    await performSubmit();
+  }
+
   const submitLabel = isCreate ? (pending ? "Creazione in corso…" : "Salva evento") : (pending ? "Salvataggio…" : "Salva modifiche");
 
   return (
-    <form onSubmit={handleSubmit} className="relative flex flex-col gap-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="relative flex flex-col gap-6">
       {pending && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/80" aria-hidden>
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-separator-line border-t-accent" />
@@ -408,6 +421,17 @@ export function EntryForm(props: EntryFormProps) {
       </section>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <ConfirmDialog
+        open={voteModeConfirmOpen}
+        onClose={() => setVoteModeConfirmOpen(false)}
+        title="Cambio modalità di voto"
+        message="Cambiando la modalità di voto (Semplice/Dettagliato) le recensioni già presenti verranno eliminate. Vuoi continuare?"
+        confirmLabel="Continua"
+        cancelLabel="Annulla"
+        onConfirm={performSubmit}
+      />
+
       <button
         type="submit"
         disabled={pending}

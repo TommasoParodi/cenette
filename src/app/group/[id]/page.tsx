@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
 import { EventFilterTabs, type EventFilter } from "./EventFilterTabs";
+import { GroupTopbarMenu } from "./GroupTopbarMenu";
+import { CopyableInviteCode } from "../CopyableInviteCode";
 
 const PLACEHOLDER_EVENT_IMAGE = "/images/placeholder-event.png";
 
@@ -44,7 +46,7 @@ export default async function GroupPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, invite_code")
+    .select("id, name, invite_code, created_by")
     .eq("id", groupId)
     .single();
 
@@ -136,12 +138,14 @@ export default async function GroupPage({
           backHref="/dashboard"
           title={group.name}
           right={
-            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-avatar-member-bg px-3 py-1.5 text-sm font-medium text-brand">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              {group.invite_code}
-            </span>
+            <>
+              <CopyableInviteCode inviteCode={group.invite_code ?? ""} />
+              <GroupTopbarMenu
+                groupId={groupId}
+                groupName={group.name}
+                isCreator={(group as { created_by?: string | null }).created_by === user.id}
+              />
+            </>
           }
         />
 

@@ -62,3 +62,184 @@ export async function joinGroup(formData: FormData) {
   const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   return { data: groupId ? { groupId } : undefined, error: null };
 }
+
+async function ensureMember(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, groupId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: membership } = await supabase
+    .from("group_members")
+    .select("group_id")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .single();
+  return membership ? user.id : null;
+}
+
+export async function updateGroup(groupId: string, formData: FormData) {
+  const name = formData.get("name") as string | null;
+  if (!name?.trim()) {
+    return { error: "Inserisci un nome per il gruppo." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await ensureMember(supabase, groupId);
+  if (!userId) {
+    return { error: "Non sei membro di questo gruppo." };
+  }
+
+  const { error } = await supabase
+    .from("groups")
+    .update({ name: name.trim() })
+    .eq("id", groupId);
+
+  if (error) {
+    console.error("updateGroup error:", error);
+    return { error: error.message || "Impossibile aggiornare il gruppo." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/group/" + groupId);
+  revalidatePath("/group/" + groupId, "layout");
+  return { data: { groupId }, error: null };
+}
+
+export async function deleteGroup(formData: FormData) {
+  const groupId = (formData.get("group_id") as string | null)?.trim();
+  if (!groupId) {
+    return { error: "Gruppo non valido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Non autenticato." };
+  }
+
+  const { data: group } = await supabase
+    .from("groups")
+    .select("created_by")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    return { error: "Gruppo non trovato." };
+  }
+
+  const createdBy = (group as { created_by?: string | null }).created_by;
+  if (createdBy !== user.id) {
+    return { error: "Solo il creatore del gruppo può eliminarlo." };
+  }
+
+  const { data: membership } = await supabase
+    .from("group_members")
+    .select("group_id")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!membership) {
+    return { error: "Non sei membro di questo gruppo." };
+  }
+
+  // Prima di eliminare il gruppo, rimuovi da Storage le foto (review-photos e entry-photos).
+  // Il CASCADE elimina solo le righe DB, non i file nei bucket.
+  const { data: groupEntries } = await supabase
+    .from("entries")
+    .select("id")
+    .eq("group_id", groupId);
+  const entryIds = (groupEntries ?? []).map((e) => e.id);
+
+  if (entryIds.length > 0) {
+    // Foto delle recensioni (bucket review-photos)
+    const { data: reviewsWithPhoto } = await supabase
+      .from("reviews")
+      .select("id, photo_path")
+      .in("entry_id", entryIds)
+      .not("photo_path", "is", null);
+    const reviewPhotoPaths = (reviewsWithPhoto ?? []).map((r) => (r as { photo_path: string }).photo_path).filter(Boolean);
+    if (reviewPhotoPaths.length > 0) {
+      await supabase.storage.from("review-photos").remove(reviewPhotoPaths);
+    }
+
+    // Foto degli eventi (bucket entry-photos)
+    const { data: entryPhotos } = await supabase
+      .from("entry_photos")
+      .select("storage_path")
+      .in("entry_id", entryIds);
+    const entryPhotoPaths = (entryPhotos ?? []).map((p) => (p as { storage_path: string }).storage_path).filter(Boolean);
+    if (entryPhotoPaths.length > 0) {
+      await supabase.storage.from("entry-photos").remove(entryPhotoPaths);
+    }
+  }
+
+  const { error } = await supabase.from("groups").delete().eq("id", groupId);
+
+  if (error) {
+    console.error("deleteGroup error:", error);
+    return { error: error.message || "Impossibile eliminare il gruppo." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard", "layout");
+  return { data: true, error: null };
+}
+
+export async function leaveGroup(formData: FormData) {
+  const groupId = (formData.get("group_id") as string | null)?.trim();
+  if (!groupId) {
+    return { error: "Gruppo non valido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Non autenticato." };
+  }
+
+  const { data: group } = await supabase
+    .from("groups")
+    .select("created_by")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    return { error: "Gruppo non trovato." };
+  }
+
+  const createdBy = (group as { created_by?: string | null }).created_by;
+  if (createdBy === user.id) {
+    return { error: "Il creatore non può uscire dal gruppo. Elimina il gruppo se non ti serve più." };
+  }
+
+  // Elimina le recensioni dell'utente per tutti gli eventi del gruppo prima di uscire
+  const { data: groupEntries } = await supabase
+    .from("entries")
+    .select("id")
+    .eq("group_id", groupId);
+  const entryIds = (groupEntries ?? []).map((e) => e.id);
+  if (entryIds.length > 0) {
+    const { error: reviewsError } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("user_id", user.id)
+      .in("entry_id", entryIds);
+    if (reviewsError) {
+      console.error("leaveGroup: errore cancellazione recensioni", reviewsError);
+    }
+  }
+
+  const { error } = await supabase
+    .from("group_members")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("leaveGroup error:", error);
+    return { error: error.message || "Impossibile uscire dal gruppo." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard", "layout");
+  return { data: true, error: null };
+}

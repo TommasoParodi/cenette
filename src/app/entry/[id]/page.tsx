@@ -3,6 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
 import { EntryImageCarousel } from "./EntryImageCarousel";
+import { EntryPageActionsProvider } from "./EntryPageActions";
+import { EntryReviewMenu } from "./EntryReviewMenu";
+import { ReviewComment } from "./ReviewComment";
+import { ReviewPhotoLightbox } from "./ReviewPhotoLightbox";
+import { EntryTopbarMenu } from "./EntryTopbarMenu";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -128,19 +133,15 @@ export default async function EntryPage({
 
   return (
     <main className="min-h-screen pb-24">
-      <div className="mx-auto max-w-2xl">
-        <Topbar
+      <EntryPageActionsProvider entryId={entryId}>
+        <div className="mx-auto max-w-2xl">
+          <Topbar
           showBack
           backHref={`/group/${entry.group_id}`}
           title={entry.title}
           right={
             entry.created_by === user.id ? (
-              <Link
-                href={`/entry/${entryId}/edit`}
-                className="text-sm font-medium text-accent hover:underline"
-              >
-                Modifica
-              </Link>
+              <EntryTopbarMenu entryId={entryId} entryTitle={entry.title} />
             ) : undefined
           }
         />
@@ -239,9 +240,14 @@ export default async function EntryPage({
                           </span>
                           <span className="truncate text-sm font-medium text-foreground">{authorName}</span>
                         </div>
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-strong text-sm font-semibold text-accent-foreground">
-                          {(r.rating_overall ?? 0).toFixed(1)}
-                        </span>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-strong text-sm font-semibold text-accent-foreground">
+                            {(r.rating_overall ?? 0).toFixed(1)}
+                          </span>
+                          {isMine && (
+                            <EntryReviewMenu entryId={entryId} reviewId={r.id} />
+                          )}
+                        </div>
                       </div>
 
                       {isDetailed && (
@@ -264,34 +270,29 @@ export default async function EntryPage({
                         </div>
                       )}
 
-                      {r.comment && (
-                        <p className="mt-3 text-sm text-text-secondary">{r.comment}</p>
-                      )}
-
-                      {reviewPhotoUrl && (
-                        <div className="mt-3">
-                          <a
-                            href={reviewPhotoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Foto recensione
-                          </a>
+                      {(r.comment || reviewPhotoUrl) && (
+                        <div className="mt-3 flex items-center gap-4">
+                          <div className="min-w-0 flex-[2]">
+                            {r.comment && (
+                              <ReviewComment text={r.comment} />
+                            )}
+                            {reviewPhotoUrl && !r.comment && (
+                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary">
+                                <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Foto recensione
+                              </span>
+                            )}
+                          </div>
+                          {reviewPhotoUrl && (
+                            <div className="flex flex-1 items-center justify-center">
+                              <ReviewPhotoLightbox src={reviewPhotoUrl} alt="Foto recensione" />
+                            </div>
+                          )}
                         </div>
                       )}
 
-                      {isMine && (
-                        <Link
-                          href={`/entry/${entryId}/review`}
-                          className="mt-2 inline-block text-xs font-medium text-accent hover:underline"
-                        >
-                          Modifica recensione
-                        </Link>
-                      )}
                     </li>
                   );
                 })}
@@ -312,6 +313,7 @@ export default async function EntryPage({
           </Link>
         </div>
       )}
+      </EntryPageActionsProvider>
     </main>
   );
 }

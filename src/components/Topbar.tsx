@@ -33,7 +33,7 @@ export function Topbar({
       className={
         [
           "flex items-center gap-3 border-b border-separator-line bg-background px-4 py-3",
-          sticky && "sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+          sticky && "sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
           className,
         ]
           .filter(Boolean)

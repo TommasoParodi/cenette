@@ -562,3 +562,95 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
   revalidatePath(`/entry/${entryId}`);
   redirect(`/entry/${entryId}`);
 }
+
+export async function deleteReview(reviewId: string, entryId: string) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Devi essere autenticato." };
+  }
+
+  const { data: review, error: fetchError } = await supabase
+    .from("reviews")
+    .select("id, user_id, photo_path")
+    .eq("id", reviewId)
+    .single();
+
+  if (fetchError || !review) {
+    return { error: "Recensione non trovata." };
+  }
+  if ((review as { user_id: string }).user_id !== user.id) {
+    return { error: "Puoi eliminare solo la tua recensione." };
+  }
+
+  const photoPath = (review as { photo_path?: string | null }).photo_path;
+  if (photoPath) {
+    await supabase.storage.from("review-photos").remove([photoPath]);
+  }
+
+  const { error: deleteError } = await supabase.from("reviews").delete().eq("id", reviewId);
+
+  if (deleteError) {
+    console.error("deleteReview error:", deleteError);
+    return { error: deleteError.message || "Impossibile eliminare la recensione." };
+  }
+
+  revalidatePath(`/entry/${entryId}`);
+  return { data: true, error: null };
+}
+
+export async function deleteEntry(entryId: string) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Devi essere autenticato." };
+  }
+
+  const { data: entry, error: fetchError } = await supabase
+    .from("entries")
+    .select("id, group_id, created_by")
+    .eq("id", entryId)
+    .single();
+
+  if (fetchError || !entry) {
+    return { error: "Evento non trovato." };
+  }
+  const row = entry as { group_id: string; created_by: string };
+  if (row.created_by !== user.id) {
+    return { error: "Solo il creatore dell'evento può eliminarlo." };
+  }
+
+  const { data: entryPhotos } = await supabase
+    .from("entry_photos")
+    .select("storage_path")
+    .eq("entry_id", entryId);
+  const entryPhotoPaths = (entryPhotos ?? []).map((p) => (p as { storage_path: string }).storage_path).filter(Boolean);
+  if (entryPhotoPaths.length > 0) {
+    await supabase.storage.from("entry-photos").remove(entryPhotoPaths);
+  }
+
+  const { data: reviewsWithPhoto } = await supabase
+    .from("reviews")
+    .select("id, photo_path")
+    .eq("entry_id", entryId)
+    .not("photo_path", "is", null);
+  const reviewPhotoPaths = (reviewsWithPhoto ?? []).map((r) => (r as { photo_path: string }).photo_path).filter(Boolean);
+  if (reviewPhotoPaths.length > 0) {
+    await supabase.storage.from("review-photos").remove(reviewPhotoPaths);
+  }
+
+  const { error: deleteError } = await supabase.from("entries").delete().eq("id", entryId);
+
+  if (deleteError) {
+    console.error("deleteEntry error:", deleteError);
+    return { error: deleteError.message || "Impossibile eliminare l'evento." };
+  }
+
+  revalidatePath(`/entry/${entryId}`);
+  revalidatePath(`/group/${row.group_id}`);
+  return { data: { groupId: row.group_id }, error: null };
+}
