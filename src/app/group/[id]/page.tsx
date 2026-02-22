@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
-import { EventFilterTabs, type EventFilter } from "./EventFilterTabs";
+import { type EventFilter } from "./EventFilterTabs";
+import { FilterAndListWrapper } from "./FilterAndListWrapper";
 import { GroupTopbarMenu } from "./GroupTopbarMenu";
 import { CopyableInviteCode } from "../CopyableInviteCode";
 
@@ -149,18 +150,17 @@ export default async function GroupPage({
           }
         />
 
-        <div className="mt-4 mb-6">
-          <EventFilterTabs groupId={groupId} />
-        </div>
-
-        <section>
-          {!entries?.length ? (
-            <p className="rounded-2xl border border-dashed border-separator-line bg-surface p-8 text-center text-text-secondary shadow-sm">
-              Nessun evento. Aggiungine uno con il pulsante in basso.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {entries.map((e) => {
+        <FilterAndListWrapper
+          groupId={groupId}
+          listContent={
+            <section>
+              {!entries?.length ? (
+                <p className="rounded-2xl border border-dashed border-separator-line bg-surface p-8 text-center text-text-secondary shadow-sm">
+                  Nessun evento. Aggiungine uno con il pulsante in basso.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {entries.map((e) => {
                 const rating = ratingByEntry[e.id];
                 const participantInitials = participantsByEntry[e.id] ?? [];
                 const imageUrl = firstPhotoUrlByEntry[e.id];
@@ -246,10 +246,12 @@ export default async function GroupPage({
                     </Link>
                   </li>
                 );
-              })}
-            </ul>
-          )}
-        </section>
+                  })}
+                </ul>
+              )}
+            </section>
+          }
+        />
       </div>
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">

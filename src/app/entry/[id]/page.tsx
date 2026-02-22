@@ -251,7 +251,7 @@ export default async function EntryPage({
                       </div>
 
                       {isDetailed && (
-                        <div className="mt-3 space-y-2">
+                        <div className="mt-3 space-y-2 px-1 py-2">
                           {RATING_CATEGORIES.map(({ key, label }) => {
                             const value = (r as Record<string, number | null>)[key] ?? 0;
                             return (

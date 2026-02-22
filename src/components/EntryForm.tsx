@@ -84,9 +84,12 @@ export function EntryForm(props: EntryFormProps) {
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
+  const [title, setTitle] = useState(defaultTitle ?? "");
   const photoInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+
+  const isTitleEmpty = !title.trim();
 
   const totalPhotoCount = isCreate ? pendingPhotos.length : serverPhotos.length;
   const canAddMorePhotos = totalPhotoCount < MAX_PHOTOS;
@@ -218,14 +221,17 @@ export function EntryForm(props: EntryFormProps) {
       <input type="hidden" name="vote_mode" value={voteMode} />
 
       <section>
-        <label htmlFor="title" className="mb-2 block text-sm font-semibold text-foreground">Titolo</label>
+        <label htmlFor="title" className="mb-2 block text-sm font-semibold text-foreground">
+          Titolo <span className="text-red-600" aria-hidden>*</span>
+        </label>
         <input
           id="title"
           type="text"
           name="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="es. Carbonara da Marco"
           required
-          defaultValue={defaultTitle}
           className={inputClass}
         />
       </section>
@@ -434,8 +440,8 @@ export function EntryForm(props: EntryFormProps) {
 
       <button
         type="submit"
-        disabled={pending}
-        className="w-full rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+        disabled={pending || isTitleEmpty}
+        className="w-full rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitLabel}
       </button>
