@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
-import LogoutButton from "./LogoutButton";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -99,27 +98,24 @@ export default async function DashboardPage() {
             </Link>
           }
           right={
-            <>
-              <Link
-                href="/profile"
-                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-user-bg text-sm font-medium text-foreground transition hover:opacity-90"
-                title={profile?.display_name ?? user.email ?? "Profilo"}
-                aria-label="Apri profilo"
-              >
-                {avatarSignedUrl ? (
-                  <img
-                    src={avatarSignedUrl}
-                    alt=""
-                    width={36}
-                    height={36}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  userInitials
-                )}
-              </Link>
-              <LogoutButton />
-            </>
+            <Link
+              href="/profile"
+              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-user-bg text-sm font-medium text-foreground transition hover:opacity-90"
+              title={profile?.display_name ?? user.email ?? "Profilo"}
+              aria-label="Apri profilo"
+            >
+              {avatarSignedUrl ? (
+                <img
+                  src={avatarSignedUrl}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                userInitials
+              )}
+            </Link>
           }
         />
 

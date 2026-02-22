@@ -5,6 +5,7 @@ import { updateProfileDisplayName, uploadAvatar, removeAvatar } from "@/server-a
 import { AvatarUpload } from "./AvatarUpload";
 import { RemoveAvatarButton } from "./RemoveAvatarButton";
 import { DisplayNameForm } from "./DisplayNameForm";
+import ProfileLogoutButton from "./ProfileLogoutButton";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -82,6 +83,8 @@ export default async function ProfilePage() {
               updateProfileDisplayName={updateProfileDisplayName}
             />
           </div>
+
+          <ProfileLogoutButton />
         </section>
       </div>
     </main>
