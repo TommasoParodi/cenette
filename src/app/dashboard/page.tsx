@@ -85,7 +85,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 pb-24">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar
           title={
@@ -119,7 +119,8 @@ export default async function DashboardPage() {
           }
         />
 
-        <section className="mt-6 mb-8">
+        <div className="px-6 pt-6">
+          <section className="mt-6 mb-8">
           <h2 className="mb-4 text-lg font-medium text-foreground">
             I tuoi gruppi
           </h2>
@@ -196,6 +197,7 @@ export default async function DashboardPage() {
             </ul>
           )}
         </section>
+        </div>
       </div>
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">

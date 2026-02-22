@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Topbar } from "@/components/Topbar";
+import { EntryFormPageLayout } from "@/components/EntryFormPageLayout";
 import { EntryForm } from "@/components/EntryForm";
 
 export default async function NewEntryPage({
@@ -55,23 +55,16 @@ export default async function NewEntryPage({
   });
 
   return (
-    <main className="min-h-screen pb-8">
-      <div className="mx-auto max-w-2xl">
-        <Topbar
-          showBack
-          backHref={`/group/${groupId}`}
-          title="Nuovo evento"
-        />
-
-        <div className="px-4 pt-6">
-          <EntryForm
-            mode="create"
-            groupId={groupId}
-            members={membersWithProfile}
-            currentUserId={user.id}
-          />
-        </div>
-      </div>
-    </main>
+    <EntryFormPageLayout
+      title="Nuovo evento"
+      backHref={`/group/${groupId}`}
+    >
+      <EntryForm
+        mode="create"
+        groupId={groupId}
+        members={membersWithProfile}
+        currentUserId={user.id}
+      />
+    </EntryFormPageLayout>
   );
 }

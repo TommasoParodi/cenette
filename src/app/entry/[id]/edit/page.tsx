@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { Topbar } from "@/components/Topbar";
+import { EntryFormPageLayout } from "@/components/EntryFormPageLayout";
 import { EntryForm } from "@/components/EntryForm";
 
 export default async function EntryEditPage({
@@ -88,32 +88,23 @@ export default async function EntryEditPage({
   }
 
   return (
-    <main className="min-h-screen pb-8">
-      <div className="mx-auto max-w-2xl">
-        <Topbar
-          showBack
-          backHref={`/entry/${entryId}`}
-          title="Modifica evento"
-        />
-
-        <div className="px-4 pt-6">
-          <section className="rounded-2xl bg-surface p-4 shadow-sm">
-          <EntryForm
-            mode="edit"
-            entryId={entryId}
-            defaultTitle={entry.title}
-            defaultType={entry.type as "HOME" | "OUT"}
-            defaultVoteMode={(entry.vote_mode as "SIMPLE" | "DETAILED") ?? "SIMPLE"}
-            defaultHappenedAt={entry.happened_at}
-            defaultDescription={entry.description}
-            members={membersWithProfile}
-            defaultParticipantIds={participantIds}
-            creatorId={entry.created_by}
-            currentPhotos={currentPhotos}
-          />
-          </section>
-        </div>
-      </div>
-    </main>
+    <EntryFormPageLayout
+      title="Modifica evento"
+      backHref={`/entry/${entryId}`}
+    >
+      <EntryForm
+        mode="edit"
+        entryId={entryId}
+        defaultTitle={entry.title}
+        defaultType={entry.type as "HOME" | "OUT"}
+        defaultVoteMode={(entry.vote_mode as "SIMPLE" | "DETAILED") ?? "SIMPLE"}
+        defaultHappenedAt={entry.happened_at}
+        defaultDescription={entry.description}
+        members={membersWithProfile}
+        defaultParticipantIds={participantIds}
+        creatorId={entry.created_by}
+        currentPhotos={currentPhotos}
+      />
+    </EntryFormPageLayout>
   );
 }

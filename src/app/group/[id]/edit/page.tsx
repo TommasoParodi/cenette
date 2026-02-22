@@ -35,7 +35,7 @@ export default async function GroupEditPage({
   if (!membership) notFound();
 
   return (
-    <main className="min-h-screen p-6 pb-24">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar
           showBack
@@ -50,13 +50,15 @@ export default async function GroupEditPage({
           }
         />
 
-        <section className="mt-6">
-          <EditGroupSection
-            groupId={group.id}
-            defaultName={group.name}
-            isCreator={(group as { created_by?: string | null }).created_by === user.id}
-          />
-        </section>
+        <div className="px-6 pt-6">
+          <section className="mt-6">
+            <EditGroupSection
+              groupId={group.id}
+              defaultName={group.name}
+              isCreator={(group as { created_by?: string | null }).created_by === user.id}
+            />
+          </section>
+        </div>
       </div>
     </main>
   );

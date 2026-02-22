@@ -84,17 +84,19 @@ export default async function EntryReviewPage({
         />
 
         <div className="px-4 pt-6">
-          <ReviewForm
-            entryId={entryId}
-            voteMode={(entry.vote_mode ?? "SIMPLE") as "SIMPLE" | "DETAILED"}
-            initialRating={myReview?.rating_overall}
-            initialComment={myReview?.comment}
-            initialRatingCost={myReview?.rating_cost}
-            initialRatingService={myReview?.rating_service}
-            initialRatingFood={myReview?.rating_food}
-            initialRatingLocation={myReview?.rating_location}
-            initialPhotoUrl={myReviewPhotoUrl}
-          />
+          <section className="rounded-2xl bg-surface p-4 shadow-sm">
+            <ReviewForm
+              entryId={entryId}
+              voteMode={(entry.vote_mode ?? "SIMPLE") as "SIMPLE" | "DETAILED"}
+              initialRating={myReview?.rating_overall}
+              initialComment={myReview?.comment}
+              initialRatingCost={myReview?.rating_cost}
+              initialRatingService={myReview?.rating_service}
+              initialRatingFood={myReview?.rating_food}
+              initialRatingLocation={myReview?.rating_location}
+              initialPhotoUrl={myReviewPhotoUrl}
+            />
+          </section>
         </div>
       </div>
     </main>

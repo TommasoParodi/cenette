@@ -132,7 +132,7 @@ export default async function GroupPage({
   }
 
   return (
-    <main className="min-h-screen p-6 pb-24">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar
           showBack
@@ -150,7 +150,8 @@ export default async function GroupPage({
           }
         />
 
-        <FilterAndListWrapper
+        <div className="px-6 pt-6">
+          <FilterAndListWrapper
           groupId={groupId}
           listContent={
             <section>
@@ -252,6 +253,7 @@ export default async function GroupPage({
             </section>
           }
         />
+        </div>
       </div>
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
