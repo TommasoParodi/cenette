@@ -30,7 +30,12 @@ export function DisplayNameForm({
   const canSubmit = value.trim().length > 0;
 
   return (
-    <form action={updateProfileDisplayName} className="flex flex-col gap-3">
+    <form
+      action={async (formData: FormData) => {
+        await updateProfileDisplayName(formData);
+      }}
+      className="flex flex-col gap-3"
+    >
       <input
         type="text"
         name="display_name"

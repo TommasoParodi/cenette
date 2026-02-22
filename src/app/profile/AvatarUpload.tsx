@@ -65,7 +65,9 @@ export function AvatarUpload({
   return (
     <form
       ref={formRef}
-      action={uploadAvatar}
+      action={async (formData: FormData) => {
+        await uploadAvatar(formData);
+      }}
       className="relative"
     >
       <input

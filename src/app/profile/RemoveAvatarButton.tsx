@@ -22,7 +22,11 @@ function SubmitButton() {
 
 export function RemoveAvatarButton({ removeAvatar }: RemoveAvatarButtonProps) {
   return (
-    <form action={removeAvatar}>
+    <form
+      action={async () => {
+        await removeAvatar();
+      }}
+    >
       <SubmitButton />
     </form>
   );
