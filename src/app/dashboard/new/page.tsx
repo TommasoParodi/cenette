@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
-import { CreateGroupForm } from "../CreateGroupForm";
-import { JoinGroupForm } from "../JoinGroupForm";
+import { NewGroupSection } from "../NewGroupSection";
 
 export default async function NewGroupPage() {
   const supabase = await createSupabaseServerClient();
@@ -19,14 +18,7 @@ export default async function NewGroupPage() {
           Crea un gruppo o entra con un codice invito
         </p>
 
-        <div className="mt-6 flex flex-col gap-6">
-          <div className="rounded-2xl bg-surface p-4 shadow-sm">
-            <CreateGroupForm redirectToGroup />
-          </div>
-          <div className="rounded-2xl bg-surface p-4 shadow-sm">
-            <JoinGroupForm redirectToGroup />
-          </div>
-        </div>
+        <NewGroupSection />
       </div>
     </main>
   );

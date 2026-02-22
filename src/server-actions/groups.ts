@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -20,9 +21,14 @@ export async function createGroup(formData: FormData) {
     return { error: error.message || "Impossibile creare il gruppo." };
   }
 
-  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/new");
+
+  if (formData.get("redirect_to_dashboard") === "1") {
+    redirect("/dashboard");
+  }
+
+  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   return { data: groupId ? { groupId } : undefined, error: null };
 }
 
@@ -46,8 +52,13 @@ export async function joinGroup(formData: FormData) {
     return { error: error.message || "Impossibile entrare nel gruppo." };
   }
 
-  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/new");
+
+  if (formData.get("redirect_to_dashboard") === "1") {
+    redirect("/dashboard");
+  }
+
+  const groupId = (data as { id?: string })?.id ?? (data as { group_id?: string })?.group_id;
   return { data: groupId ? { groupId } : undefined, error: null };
 }

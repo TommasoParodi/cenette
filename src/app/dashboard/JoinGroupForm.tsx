@@ -1,40 +1,51 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useFormStatus } from "react-dom";
 import { joinGroup } from "@/server-actions/groups";
 
-const REDIRECT_PREFIX = "redirect:";
+function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
+  const { pending } = useFormStatus();
+  useEffect(() => {
+    onPendingChange?.(pending);
+  }, [pending, onPendingChange]);
+  return null;
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-70"
+    >
+      {pending ? "Attendere…" : "Entra nel gruppo"}
+    </button>
+  );
+}
 
 export function JoinGroupForm({
   redirectToGroup = false,
-}: { redirectToGroup?: boolean } = {}) {
-  const router = useRouter();
+  onPendingChange,
+}: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
       const result = await joinGroup(formData);
       if (result.error) return result.error;
-      if (redirectToGroup) {
-        if (result.data?.groupId) return `${REDIRECT_PREFIX}${result.data.groupId}`;
-        return `${REDIRECT_PREFIX}dashboard`;
-      }
       return null;
     },
     null as string | null
   );
 
-  useEffect(() => {
-    if (typeof state === "string" && state.startsWith(REDIRECT_PREFIX)) {
-      const path = state.slice(REDIRECT_PREFIX.length);
-      router.push(path === "dashboard" ? "/dashboard" : `/group/${path}`);
-    }
-  }, [state, router]);
-
-  const isRedirect = typeof state === "string" && state.startsWith(REDIRECT_PREFIX);
-  const errorMessage = typeof state === "string" && !isRedirect ? state : null;
+  const errorMessage = typeof state === "string" ? state : null;
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
+      <PendingNotifier onPendingChange={onPendingChange} />
+      {redirectToGroup && (
+        <input type="hidden" name="redirect_to_dashboard" value="1" />
+      )}
       <h3 className="text-sm font-medium text-label">
         Entra con codice invito
       </h3>
@@ -49,12 +60,7 @@ export function JoinGroupForm({
       {errorMessage && (
         <p className="text-sm text-red-600">{errorMessage}</p>
       )}
-      <button
-        type="submit"
-        className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
-      >
-        Entra nel gruppo
-      </button>
+      <SubmitButton />
     </form>
   );
 }
