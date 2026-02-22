@@ -44,7 +44,7 @@ export default async function ProfilePage() {
   const initials = getInitials(displayName, "?");
 
   return (
-    <main className="min-h-screen p-6 pb-24">
+    <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar
           title="Profilo"
@@ -52,7 +52,8 @@ export default async function ProfilePage() {
           backHref="/dashboard"
         />
 
-        <section className="mt-8 flex flex-col items-center gap-6">
+        <div className="px-6 pt-6">
+          <section className="flex flex-col items-center gap-6">
           {/* Avatar cliccabile per caricare immagine */}
           <AvatarUpload
             avatarSignedUrl={avatarSignedUrl}
@@ -85,7 +86,8 @@ export default async function ProfilePage() {
           </div>
 
           <ProfileLogoutButton />
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );
