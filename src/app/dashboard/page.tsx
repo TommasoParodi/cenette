@@ -77,6 +77,13 @@ export default async function DashboardPage() {
   }
 
   const userInitials = getInitials(profile?.display_name ?? user.email ?? "", "?");
+  let avatarSignedUrl: string | null = null;
+  if (profile?.avatar_url) {
+    const { data: signed } = await supabase.storage
+      .from("avatars")
+      .createSignedUrl(profile.avatar_url, 3600);
+    avatarSignedUrl = signed?.signedUrl ?? null;
+  }
 
   return (
     <main className="min-h-screen p-6 pb-24">
@@ -93,12 +100,24 @@ export default async function DashboardPage() {
           }
           right={
             <>
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-avatar-user-bg text-sm font-medium text-foreground"
-                title={profile?.display_name ?? user.email ?? ""}
+              <Link
+                href="/profile"
+                className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-user-bg text-sm font-medium text-foreground transition hover:opacity-90"
+                title={profile?.display_name ?? user.email ?? "Profilo"}
+                aria-label="Apri profilo"
               >
-                {userInitials}
-              </span>
+                {avatarSignedUrl ? (
+                  <img
+                    src={avatarSignedUrl}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  userInitials
+                )}
+              </Link>
               <LogoutButton />
             </>
           }
