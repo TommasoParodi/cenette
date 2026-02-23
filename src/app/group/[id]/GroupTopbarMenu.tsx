@@ -96,14 +96,16 @@ export function GroupTopbarMenu({
           className="absolute right-0 top-full z-20 mt-1 min-w-[10rem] rounded-xl border border-separator-line bg-surface py-1 shadow-lg"
           role="menu"
         >
-          <Link
-            href={`/group/${groupId}/edit`}
-            className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-          >
-            Modifica
-          </Link>
+          {isCreator && (
+            <Link
+              href={`/group/${groupId}/edit`}
+              className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              Modifica
+            </Link>
+          )}
           {isCreator ? (
             <button
               type="button"

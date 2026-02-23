@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
+import { AdminIcon } from "@/components/AdminIcon";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
 
   const { data: memberships } = await supabase
     .from("group_members")
-    .select("group_id, groups(id, name, invite_code, created_at)")
+    .select("group_id, groups(id, name, invite_code, created_at, created_by)")
     .eq("user_id", user.id);
 
   type GroupRow = {
@@ -38,6 +39,7 @@ export default async function DashboardPage() {
     name: string;
     invite_code: string;
     created_at: string;
+    created_by: string | null;
   };
   const groups: GroupRow[] =
     memberships?.flatMap((m) => {
@@ -145,15 +147,15 @@ export default async function DashboardPage() {
                           <span className="min-w-0 font-semibold text-foreground">
                             {g.name}
                           </span>
-                          <span
-                            className={
-                              count > 0
-                                ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rating-medium text-xs font-medium text-white"
-                                : "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-medium text-foreground"
-                            }
-                          >
-                            {count > 0 ? "7.5" : "—"}
-                          </span>
+                          {g.created_by === user.id ? (
+                            <span
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
+                              title="Sei l'admin di questo gruppo"
+                              aria-label="Admin del gruppo"
+                            >
+                              <AdminIcon className="h-5 w-5" />
+                            </span>
+                          ) : null}
                         </div>
                         <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
                           <svg

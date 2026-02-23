@@ -9,6 +9,7 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  turbopack: {}, // silenzia l'errore: webpack config da @serwist/next, Turbopack default in Next 16
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb", // 3 foto × 5 MB + overhead form

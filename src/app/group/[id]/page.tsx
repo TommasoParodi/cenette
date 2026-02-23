@@ -7,6 +7,7 @@ import { type EventFilter } from "./EventFilterTabs";
 import { FilterAndListWrapper } from "./FilterAndListWrapper";
 import { GroupTopbarMenu } from "./GroupTopbarMenu";
 import { CopyableInviteCode } from "../CopyableInviteCode";
+import { AdminIcon } from "@/components/AdminIcon";
 
 const PLACEHOLDER_EVENT_IMAGE = "/images/placeholder-event.png";
 
@@ -52,6 +53,8 @@ export default async function GroupPage({
     .single();
 
   if (!group) notFound();
+
+  const isCreator = (group as { created_by?: string | null }).created_by === user.id;
 
   const { data: membership } = await supabase
     .from("group_members")
@@ -137,14 +140,23 @@ export default async function GroupPage({
         <Topbar
           showBack
           backHref="/dashboard"
-          title={group.name}
+          title={
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-lg font-semibold text-foreground">{group.name}</span>
+              {isCreator && (
+                <span className="shrink-0 text-brand" title="Sei l'admin del gruppo" aria-label="Admin del gruppo">
+                  <AdminIcon />
+                </span>
+              )}
+            </span>
+          }
           right={
             <>
               <CopyableInviteCode inviteCode={group.invite_code ?? ""} />
               <GroupTopbarMenu
                 groupId={groupId}
                 groupName={group.name}
-                isCreator={(group as { created_by?: string | null }).created_by === user.id}
+                isCreator={isCreator}
               />
             </>
           }

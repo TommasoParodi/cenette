@@ -46,6 +46,7 @@ Triggers:
 
 RLS:
 - Users can SELECT only their own profile
+- Users can SELECT profiles of users who share at least one group (per mostrare nomi/iniziali in gruppo e eventi); vedi [supabase-profiles-select-group-members.md](supabase-profiles-select-group-members.md)
 - Users can UPDATE only their own profile
 
 Future:
