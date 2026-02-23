@@ -19,7 +19,7 @@ function getInitials(name: string | null | undefined, fallback: string): string 
 }
 
 type ProfilePageProps = {
-  searchParams?: Promise<{ avatar_refresh?: string }> | { avatar_refresh?: string };
+  searchParams?: Promise<{ avatar_refresh?: string }>;
 };
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
@@ -33,10 +33,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
     redirect("/");
   }
 
-  const resolvedSearchParams =
-    searchParams && typeof (searchParams as Promise<unknown>).then === "function"
-      ? await (searchParams as Promise<{ avatar_refresh?: string }>)
-      : (searchParams ?? {});
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
   const avatarRefreshCookie = (await cookies()).get("avatar_refresh")?.value ?? null;
 

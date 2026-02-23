@@ -4,7 +4,7 @@ type FormCardProps = {
   disabled?: boolean;
   isLoading?: boolean;
   children: React.ReactNode;
-} & Pick<React.HTMLAttributes<HTMLDivElement>, "id" | "role" | "ariaLabelledby" | "hidden" | "className">;
+} & Partial<Pick<React.HTMLAttributes<HTMLDivElement>, "id" | "role" | "aria-labelledby" | "hidden" | "className">>;
 
 export function FormCard({
   disabled = false,
@@ -12,7 +12,7 @@ export function FormCard({
   children,
   id,
   role,
-  ariaLabelledby,
+  "aria-labelledby": ariaLabelledBy,
   hidden,
   className,
 }: FormCardProps) {
@@ -20,7 +20,7 @@ export function FormCard({
     <div
       id={id}
       role={role}
-      aria-labelledby={ariaLabelledby}
+      aria-labelledby={ariaLabelledBy}
       hidden={hidden}
       className={`relative rounded-2xl bg-surface p-4 shadow-sm transition-opacity ${
         disabled ? "pointer-events-none opacity-50" : ""
