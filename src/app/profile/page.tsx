@@ -73,7 +73,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const initials = getInitials(displayName, "?");
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="flex h-[100dvh] flex-col overflow-y-auto pb-24">
       <div className="mx-auto max-w-2xl">
         <Topbar
           title="Profilo"
@@ -89,9 +89,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
             initials={initials}
             uploadAvatar={uploadAvatar}
           />
-          <p className="text-center text-sm text-text-tertiary">
-            Clicca sull&apos;avatar per cambiare l&apos;immagine (JPG, PNG, WebP o GIF, max 5 MB)
-          </p>
           {profile?.avatar_url ? (
             <RemoveAvatarButton removeAvatar={removeAvatar} />
           ) : null}

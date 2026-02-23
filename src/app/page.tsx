@@ -15,7 +15,7 @@ export default async function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background font-sans">
-      <header className="mb-8 flex flex-col items-center text-center">
+      <header className="mb-8 mt-12 flex flex-col items-center text-center">
         <h1
           className="text-4xl font-semibold tracking-tight text-brand"
           style={{ fontFamily: "var(--font-playfair), serif" }}
@@ -27,7 +27,7 @@ export default async function Home() {
         </p>
       </header>
       <AuthForm />
-      <p className="mt-auto pt-8 text-center text-sm text-text-tertiary">
+      <p className="mt-6 text-center text-sm text-text-tertiary">
         Versione {packageJson.version}
       </p>
     </main>
