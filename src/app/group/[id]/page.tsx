@@ -33,11 +33,14 @@ export default async function GroupPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; sort?: string }>;
 }) {
   const { id: groupId } = await params;
-  const { filter: filterParam } = await searchParams;
+  const { filter: filterParam, sort: sortParam } = await searchParams;
   const filter = (filterParam === "home" || filterParam === "out" ? filterParam : "tutti") as EventFilter;
+  const validSort = ["date_asc", "date_desc", "vote_asc", "vote_desc"].includes(sortParam ?? "")
+    ? (sortParam as "date_asc" | "date_desc" | "vote_asc" | "vote_desc")
+    : "date_desc";
 
   const supabase = await createSupabaseServerClient();
 
@@ -67,18 +70,19 @@ export default async function GroupPage({
 
   let entriesQuery = supabase
     .from("entries")
-    .select("id, title, type, happened_at, created_at")
+    .select("id, title, type, happened_at, created_at, created_by")
     .eq("group_id", groupId)
     .order("happened_at", { ascending: false });
 
   if (filter === "home") entriesQuery = entriesQuery.eq("type", "HOME");
   if (filter === "out") entriesQuery = entriesQuery.eq("type", "OUT");
 
-  const { data: entries } = await entriesQuery;
+  const { data: entriesRaw } = await entriesQuery;
+  const entriesList = entriesRaw ?? [];
 
-  const entryIds = (entries ?? []).map((e) => e.id);
+  const entryIds = entriesList.map((e) => e.id);
   const ratingByEntry: Record<string, number> = {};
-  const participantsByEntry: Record<string, string[]> = {};
+  const participantsByEntry: Record<string, { initials: string; userId: string }[]> = {};
   const firstPhotoUrlByEntry: Record<string, string> = {};
 
   if (entryIds.length > 0) {
@@ -100,7 +104,7 @@ export default async function GroupPage({
 
     const { data: participants } = await supabase
       .from("entry_participants")
-      .select("entry_id, user_id")
+      .select("entry_id, user_id, cached_display_name")
       .in("entry_id", entryIds);
     const userIds = [...new Set((participants ?? []).map((p) => p.user_id))];
     const { data: profiles } =
@@ -111,9 +115,8 @@ export default async function GroupPage({
     profiles?.forEach((p) => nameByUserId.set(p.id, p.display_name ?? "?"));
     participants?.forEach((p) => {
       if (!participantsByEntry[p.entry_id]) participantsByEntry[p.entry_id] = [];
-      participantsByEntry[p.entry_id].push(
-        getInitials(nameByUserId.get(p.user_id), "?")
-      );
+      const name = (p as { cached_display_name?: string | null }).cached_display_name ?? nameByUserId.get(p.user_id) ?? "?";
+      participantsByEntry[p.entry_id].push({ initials: getInitials(name, "?"), userId: p.user_id });
     });
 
     const { data: photos } = await supabase
@@ -133,6 +136,20 @@ export default async function GroupPage({
       if (signed?.signedUrl) firstPhotoUrlByEntry[entryId] = signed.signedUrl;
     }
   }
+
+  const entries = (() => {
+    const list = [...entriesList];
+    if (validSort === "vote_desc") {
+      return list.sort((a, b) => (ratingByEntry[b.id] ?? -1) - (ratingByEntry[a.id] ?? -1));
+    }
+    if (validSort === "vote_asc") {
+      return list.sort((a, b) => (ratingByEntry[a.id] ?? -1) - (ratingByEntry[b.id] ?? -1));
+    }
+    if (validSort === "date_asc") {
+      return list.sort((a, b) => new Date(a.happened_at).getTime() - new Date(b.happened_at).getTime());
+    }
+    return list.sort((a, b) => new Date(b.happened_at).getTime() - new Date(a.happened_at).getTime());
+  })();
 
   return (
     <main className="min-h-screen pb-24">
@@ -165,6 +182,7 @@ export default async function GroupPage({
         <div className="px-6 pt-6">
           <FilterAndListWrapper
           groupId={groupId}
+          currentSort={validSort}
           listContent={
             <section>
               {!entries?.length ? (
@@ -173,11 +191,24 @@ export default async function GroupPage({
                 </p>
               ) : (
                 <ul className="space-y-3">
-                  {entries.map((e) => {
+                  {(() => {
+                    const entriesWithRating = entries.filter((e) => ratingByEntry[e.id] != null);
+                    const maxRating =
+                      entriesWithRating.length > 0
+                        ? Math.max(...entriesWithRating.map((e) => ratingByEntry[e.id]!))
+                        : null;
+                    const highestRatedEntryId =
+                      maxRating != null
+                        ? entriesWithRating.find((e) => ratingByEntry[e.id] === maxRating)?.id ?? null
+                        : null;
+
+                    return entries.map((e) => {
                 const rating = ratingByEntry[e.id];
-                const participantInitials = participantsByEntry[e.id] ?? [];
+                const participantList = participantsByEntry[e.id] ?? [];
                 const imageUrl = firstPhotoUrlByEntry[e.id];
                 const isHome = e.type === "HOME";
+                const creatorId = (e as { created_by?: string | null }).created_by ?? null;
+                const isHighestRated = highestRatedEntryId === e.id;
                 const ratingColor =
                   rating != null && rating >= 8
                     ? "bg-rating-high"
@@ -216,9 +247,22 @@ export default async function GroupPage({
                         )}
                       </div>
                       <div className="p-3">
-                        <h2 className="text-sm font-semibold text-foreground">
-                          {e.title}
-                        </h2>
+                        <div className="flex items-start justify-between gap-2">
+                          <h2 className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+                            {e.title}
+                          </h2>
+                          {isHighestRated && (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium leading-none text-amber-700 dark:text-amber-400"
+                              title="Punteggio più alto"
+                            >
+                              <svg className="h-5 w-5 shrink-0 align-middle" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                              Top
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-1 flex items-center gap-1 text-xs text-text-tertiary">
                           <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -245,21 +289,30 @@ export default async function GroupPage({
                             )}
                           </span>
                           <div className="flex items-center gap-0.5">
-                            {participantInitials.slice(0, 4).map((init, i) => (
-                              <span
-                                key={`${e.id}-${i}-${init}`}
-                                className="flex h-5 w-5 items-center justify-center rounded-full border border-brand bg-avatar-member-bg text-[10px] font-medium text-brand"
-                              >
-                                {init}
-                              </span>
-                            ))}
+                            {participantList.slice(0, 4).map((part, i) => {
+                              const isCreator = creatorId != null && part.userId === creatorId;
+                              return (
+                                <span
+                                  key={`${e.id}-${i}-${part.userId}`}
+                                  className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-medium ${
+                                    isCreator
+                                      ? "border-amber-400 bg-amber-400/90 text-amber-950"
+                                      : "border-brand bg-avatar-member-bg text-brand"
+                                  }`}
+                                  title={isCreator ? "Creatore dell'evento" : undefined}
+                                >
+                                  {part.initials}
+                                </span>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
                     </Link>
                   </li>
                 );
-                  })}
+                  });
+                  })()}
                 </ul>
               )}
             </section>

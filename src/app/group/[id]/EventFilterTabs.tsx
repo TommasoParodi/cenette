@@ -23,11 +23,22 @@ export function EventFilterTabs({ groupId, onFilterChange }: EventFilterTabsProp
   const current = (searchParams.get("filter") as EventFilter) || "tutti";
   const base = pathname ?? `/group/${groupId}`;
 
+  const buildHref = (filterValue: EventFilter) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    if (filterValue === "tutti") {
+      params.delete("filter");
+    } else {
+      params.set("filter", filterValue);
+    }
+    const q = params.toString();
+    return q ? `${base}?${q}` : base;
+  };
+
   return (
     <div className="flex gap-2">
       {FILTERS.map(({ value, label }) => {
         const isActive = current === value;
-        const href = value === "tutti" ? base : `${base}?filter=${value}`;
+        const href = buildHref(value);
         const className = `rounded-full px-4 py-2 text-sm font-medium transition ${
           isActive
             ? "bg-accent-strong text-accent-foreground"

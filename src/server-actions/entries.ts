@@ -80,12 +80,20 @@ export async function createEntry(groupId: string, formData: FormData) {
   }
 
   const finalParticipantIds = [...new Set([user.id, ...participantIds])];
+  const { data: participantProfiles } =
+    finalParticipantIds.length > 0
+      ? await supabase.from("profiles").select("id, display_name").in("id", finalParticipantIds)
+      : { data: null };
+  const displayNameByUserId = new Map<string, string>();
+  participantProfiles?.forEach((p) => displayNameByUserId.set(p.id, p.display_name ?? "Utente"));
+
   const { error: participantsError } = await supabase
     .from("entry_participants")
     .insert(
       finalParticipantIds.map((uid) => ({
         entry_id: newEntry.id,
         user_id: uid,
+        cached_display_name: displayNameByUserId.get(uid) ?? "Utente",
       }))
     );
 
@@ -216,14 +224,41 @@ export async function updateEntry(entryId: string, formData: FormData) {
     : [];
   const finalParticipantIds = [...new Set([entry.created_by, ...participantIds])];
 
-  await supabase.from("entry_participants").delete().eq("entry_id", entryId);
-  if (finalParticipantIds.length > 0) {
+  // Aggiornamento partecipanti per DIFF: cancellare solo chi è stato rimosso e inserire solo i nuovi.
+  // Così il trigger delete_review_when_participant_removed su Supabase non cancella le recensioni
+  // di chi resta partecipante (prima cancellavamo tutti e le recensioni sparivano).
+  const { data: currentParticipants } = await supabase
+    .from("entry_participants")
+    .select("user_id")
+    .eq("entry_id", entryId);
+  const currentIds = new Set((currentParticipants ?? []).map((p) => p.user_id));
+  const toAdd = finalParticipantIds.filter((id) => !currentIds.has(id));
+  const toRemove = [...currentIds].filter((id) => !finalParticipantIds.includes(id));
+
+  if (toRemove.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("entry_participants")
+      .delete()
+      .eq("entry_id", entryId)
+      .in("user_id", toRemove);
+    if (deleteError) {
+      console.error("updateEntry remove participants error:", deleteError);
+      return { error: deleteError.message || "Impossibile aggiornare i partecipanti." };
+    }
+  }
+  if (toAdd.length > 0) {
+    const { data: toAddProfiles } =
+      await supabase.from("profiles").select("id, display_name").in("id", toAdd);
+    const displayNameByUserId = new Map<string, string>();
+    toAddProfiles?.forEach((p) => displayNameByUserId.set(p.id, p.display_name ?? "Utente"));
+
     const { error: participantsError } = await supabase
       .from("entry_participants")
       .insert(
-        finalParticipantIds.map((uid) => ({
+        toAdd.map((uid) => ({
           entry_id: entryId,
           user_id: uid,
+          cached_display_name: displayNameByUserId.get(uid) ?? "Utente",
         }))
       );
     if (participantsError) {
@@ -231,9 +266,6 @@ export async function updateEntry(entryId: string, formData: FormData) {
       return { error: participantsError.message || "Impossibile aggiornare i partecipanti." };
     }
   }
-
-  // Le recensioni di chi non è più partecipante vengono cancellate dal trigger
-  // delete_review_when_participant_removed su entry_participants (DELETE)
 
   // Nuove foto (rispettando max 3 totali)
   const { count } = await supabase

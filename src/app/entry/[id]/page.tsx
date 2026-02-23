@@ -66,7 +66,7 @@ export default async function EntryPage({
 
   const { data: participantRows } = await supabase
     .from("entry_participants")
-    .select("user_id")
+    .select("user_id, cached_display_name")
     .eq("entry_id", entryId);
   const participantIds = (participantRows ?? []).map((p) => p.user_id);
   const isParticipant = participantIds.length === 0 || participantIds.includes(user.id);
@@ -122,11 +122,14 @@ export default async function EntryPage({
       ? Math.round((reviews.reduce((a, r) => a + (r.rating_overall ?? 0), 0) / reviews.length) * 10) / 10
       : null;
 
-  const participantsWithNames = participantIds.map((uid) => ({
-    id: uid,
-    name: displayNameByUserId.get(uid) ?? "Utente",
-    initials: getInitials(displayNameByUserId.get(uid), "?"),
-  }));
+  const participantsWithNames = (participantRows ?? []).map((p) => {
+    const name = (p as { cached_display_name?: string | null }).cached_display_name ?? displayNameByUserId.get(p.user_id) ?? "Utente";
+    return {
+      id: p.user_id,
+      name,
+      initials: getInitials(name, "?"),
+    };
+  });
 
   const isDetailed = (entry.vote_mode ?? "SIMPLE") === "DETAILED";
   const isHome = entry.type === "HOME";
@@ -192,14 +195,24 @@ export default async function EntryPage({
             <section className="mt-8">
               <h2 className="mb-3 text-sm font-semibold text-foreground">Partecipanti</h2>
               <ul className="space-y-2">
-                {participantsWithNames.map((p) => (
-                  <li key={p.id} className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
-                      {p.initials}
-                    </span>
-                    <span className="text-sm text-foreground">{p.name}</span>
-                  </li>
-                ))}
+                {participantsWithNames.map((p) => {
+                  const isCreator = p.id === entry.created_by;
+                  return (
+                    <li key={p.id} className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
+                        {p.initials}
+                      </span>
+                      <span className="text-sm text-foreground">{p.name}</span>
+                      {isCreator && (
+                        <span className="shrink-0 text-amber-400" title="Creatore dell'evento" aria-label="Creatore dell'evento">
+                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}

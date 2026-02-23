@@ -2,15 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { type EventSort } from "./EventSortTabs";
 import { EventFilterTabs } from "./EventFilterTabs";
+import { EventSortTabs } from "./EventSortTabs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 type FilterAndListWrapperProps = {
   groupId: string;
+  currentSort: EventSort;
   listContent: React.ReactNode;
 };
 
-export function FilterAndListWrapper({ groupId, listContent }: FilterAndListWrapperProps) {
+export function FilterAndListWrapper({ groupId, currentSort, listContent }: FilterAndListWrapperProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -20,10 +23,17 @@ export function FilterAndListWrapper({ groupId, listContent }: FilterAndListWrap
     });
   };
 
+  const onSortChange = (href: string) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <>
-      <div className="mt-4 mb-6">
+      <div className="mt-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <EventFilterTabs groupId={groupId} onFilterChange={onFilterChange} />
+        <EventSortTabs groupId={groupId} currentSort={currentSort} onSortChange={onSortChange} />
       </div>
       <div className="relative min-h-[120px]">
         {isPending && (

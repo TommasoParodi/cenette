@@ -211,13 +211,35 @@ export async function leaveGroup(formData: FormData) {
     return { error: "Il creatore non può uscire dal gruppo. Elimina il gruppo se non ti serve più." };
   }
 
-  // Elimina le recensioni dell'utente per tutti gli eventi del gruppo prima di uscire
   const { data: groupEntries } = await supabase
     .from("entries")
     .select("id")
     .eq("group_id", groupId);
   const entryIds = (groupEntries ?? []).map((e) => e.id);
+
+  // 1. Trasferisci gli eventi creati dall'utente all'owner del gruppo
+  const { error: transferError } = await supabase
+    .from("entries")
+    .update({ created_by: createdBy })
+    .eq("group_id", groupId)
+    .eq("created_by", user.id);
+  if (transferError) {
+    console.error("leaveGroup: errore trasferimento eventi", transferError);
+    return { error: transferError.message || "Impossibile trasferire gli eventi." };
+  }
+
+  // 2. Elimina le recensioni dell'utente (e le foto da Storage) prima di uscire
   if (entryIds.length > 0) {
+    const { data: reviewsWithPhoto } = await supabase
+      .from("reviews")
+      .select("id, photo_path")
+      .eq("user_id", user.id)
+      .in("entry_id", entryIds)
+      .not("photo_path", "is", null);
+    const reviewPhotoPaths = (reviewsWithPhoto ?? []).map((r) => (r as { photo_path: string }).photo_path).filter(Boolean);
+    if (reviewPhotoPaths.length > 0) {
+      await supabase.storage.from("review-photos").remove(reviewPhotoPaths);
+    }
     const { error: reviewsError } = await supabase
       .from("reviews")
       .delete()
@@ -228,6 +250,7 @@ export async function leaveGroup(formData: FormData) {
     }
   }
 
+  // 3. Rimuovi da group_members
   const { error } = await supabase
     .from("group_members")
     .delete()
