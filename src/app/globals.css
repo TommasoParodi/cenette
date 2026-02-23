@@ -43,6 +43,8 @@
 }
 
 @theme inline {
+  /* Altezza "schermo" per PWA/mobile: 100dvh evita scroll superfluo (100vh supera la viewport visibile) */
+  --min-height-screen: 100dvh;
   --color-background: var(--background);
   --color-background-primary: var(--background-primary);
   --color-brand: var(--brand);
@@ -68,9 +70,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Sfondo chiaro a livello di tutta l'app */
+/* Sfondo chiaro a livello di tutta l'app
+   Uso 100dvh (dynamic viewport height) per PWA/mobile: 100vh include l'area sotto
+   la barra degli indirizzi e causa scroll superfluo quando il contenuto è tutto visibile. */
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;

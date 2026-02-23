@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AuthForm } from "./AuthForm";
+import packageJson from "../../package.json";
 
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
@@ -26,6 +27,9 @@ export default async function Home() {
         </p>
       </header>
       <AuthForm />
+      <p className="mt-auto pt-8 text-center text-sm text-text-tertiary">
+        Versione {packageJson.version}
+      </p>
     </main>
   );
 }
