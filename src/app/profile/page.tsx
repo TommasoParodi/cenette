@@ -74,14 +74,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
   return (
     <main className="flex h-[100dvh] flex-col overflow-y-auto pb-24">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto w-full max-w-2xl">
         <Topbar
           title="Profilo"
           showBack
           backHref="/dashboard"
-          className="px-0"
         />
-
         <div className="px-6 pt-6">
           <section className="flex flex-col items-center gap-6">
           {/* Avatar cliccabile per caricare immagine */}

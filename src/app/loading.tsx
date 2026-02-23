@@ -2,7 +2,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export default function Loading() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-6 pb-24">
+    <main className="flex h-[100dvh] items-center justify-center overflow-y-auto pb-24 pt-4">
       <LoadingSpinner />
     </main>
   );
