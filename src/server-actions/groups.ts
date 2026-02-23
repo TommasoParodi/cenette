@@ -217,6 +217,14 @@ export async function leaveGroup(formData: FormData) {
     .eq("group_id", groupId);
   const entryIds = (groupEntries ?? []).map((e) => e.id);
 
+  // Eventi che stiamo per trasferire (creati dall'utente che esce)
+  const { data: transferredEntries } = await supabase
+    .from("entries")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("created_by", user.id);
+  const transferredEntryIds = (transferredEntries ?? []).map((e) => e.id);
+
   // 1. Trasferisci gli eventi creati dall'utente all'owner del gruppo
   const { error: transferError } = await supabase
     .from("entries")
@@ -226,6 +234,37 @@ export async function leaveGroup(formData: FormData) {
   if (transferError) {
     console.error("leaveGroup: errore trasferimento eventi", transferError);
     return { error: transferError.message || "Impossibile trasferire gli eventi." };
+  }
+
+  // Se l'owner non era tra i partecipanti, aggiungilo agli eventi trasferiti così l'evento ha un creatore in lista
+  if (transferredEntryIds.length > 0 && createdBy) {
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", createdBy)
+      .single();
+    const ownerDisplayName = (ownerProfile as { display_name?: string | null } | null)?.display_name ?? "Utente";
+    const { data: existingParticipation } = await supabase
+      .from("entry_participants")
+      .select("entry_id")
+      .eq("user_id", createdBy)
+      .in("entry_id", transferredEntryIds);
+    const ownerAlreadyIn = new Set((existingParticipation ?? []).map((p) => p.entry_id));
+    const toAdd = transferredEntryIds.filter((id) => !ownerAlreadyIn.has(id));
+    if (toAdd.length > 0) {
+      const { error: addOwnerError } = await supabase
+        .from("entry_participants")
+        .insert(
+          toAdd.map((entry_id) => ({
+            entry_id,
+            user_id: createdBy,
+            cached_display_name: ownerDisplayName,
+          }))
+        );
+      if (addOwnerError) {
+        console.error("leaveGroup: errore aggiunta owner come partecipante", addOwnerError);
+      }
+    }
   }
 
   // 2. Elimina le recensioni dell'utente (e le foto da Storage) prima di uscire
@@ -248,6 +287,17 @@ export async function leaveGroup(formData: FormData) {
     if (reviewsError) {
       console.error("leaveGroup: errore cancellazione recensioni", reviewsError);
     }
+
+    // Rimuovi l'utente dalla lista partecipanti di tutti gli eventi del gruppo
+    const { error: participantsError } = await supabase
+      .from("entry_participants")
+      .delete()
+      .eq("user_id", user.id)
+      .in("entry_id", entryIds);
+    if (participantsError) {
+      console.error("leaveGroup: errore rimozione partecipanti", participantsError);
+      return { error: "Impossibile rimuovere i partecipanti dagli eventi. Verifica le policy RLS su entry_participants (consenti DELETE dove user_id = auth.uid())." };
+    }
   }
 
   // 3. Rimuovi da group_members
@@ -264,5 +314,7 @@ export async function leaveGroup(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard", "layout");
+  revalidatePath(`/group/${groupId}`);
+  revalidatePath(`/group/${groupId}`, "layout");
   return { data: true, error: null };
 }

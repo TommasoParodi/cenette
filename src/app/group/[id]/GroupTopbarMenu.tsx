@@ -143,7 +143,7 @@ export function GroupTopbarMenu({
         open={leaveConfirmOpen}
         onClose={() => setLeaveConfirmOpen(false)}
         title="Abbandona gruppo"
-        message={`Abbandonare il gruppo «${groupName}»? Tutte le tue recensioni in questo gruppo verranno eliminate. Gli eventi che hai creato passeranno al proprietario del gruppo.`}
+        message={`Abbandonare il gruppo «${groupName}»? Tutte le tue recensioni verranno eliminate, verrai rimosso dalla lista partecipanti di tutti gli eventi e gli eventi che hai creato passeranno al proprietario del gruppo.`}
         confirmLabel="Abbandona"
         cancelLabel="Annulla"
         onConfirm={handleLeaveConfirm}
