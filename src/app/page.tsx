@@ -14,7 +14,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background font-sans">
+    <main className="flex h-[100dvh] flex-col items-center justify-center overflow-y-auto bg-background font-sans">
       <header className="mb-8 mt-12 flex flex-col items-center text-center">
         <h1
           className="text-4xl font-semibold tracking-tight text-brand"

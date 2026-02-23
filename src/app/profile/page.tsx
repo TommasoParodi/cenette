@@ -79,6 +79,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           title="Profilo"
           showBack
           backHref="/dashboard"
+          className="px-0"
         />
 
         <div className="px-6 pt-6">
