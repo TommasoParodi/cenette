@@ -1,8 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+const AVATAR_REFRESH_COOKIE = "avatar_refresh";
 
 const AVATAR_BUCKET = "avatars";
 const AVATAR_PATH_PREFIX = "users";
@@ -84,16 +87,48 @@ export async function uploadAvatar(formData: FormData) {
     return { error: uploadError.message || "Impossibile caricare l'avatar." };
   }
 
+  // Prova con avatar_updated_at (cache busting); se la colonna non esiste (migrazione non applicata), aggiorna solo avatar_url
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({ avatar_url: storagePath })
+    .update({
+      avatar_url: storagePath,
+      avatar_updated_at: new Date().toISOString(),
+    })
     .eq("id", user.id);
 
+  const refreshTs = String(Date.now());
+
   if (updateError) {
-    console.error("uploadAvatar profile update error:", updateError);
-    return { error: "Avatar caricato ma non aggiornato nel profilo." };
+    if (updateError.code === "PGRST204") {
+      // Colonna avatar_updated_at non presente: aggiorna solo avatar_url
+      const { error: fallbackError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: storagePath })
+        .eq("id", user.id);
+      if (fallbackError) {
+        console.error("uploadAvatar profile update error:", fallbackError);
+        return { error: "Avatar caricato ma non aggiornato nel profilo." };
+      }
+      (await cookies()).set(AVATAR_REFRESH_COOKIE, refreshTs, {
+        maxAge: 120,
+        path: "/",
+        httpOnly: true,
+      });
+      revalidatePath("/profile");
+      revalidatePath("/dashboard");
+      redirect(`/profile?avatar_refresh=${refreshTs}`);
+    } else {
+      console.error("uploadAvatar profile update error:", updateError);
+      return { error: "Avatar caricato ma non aggiornato nel profilo." };
+    }
   }
 
+  // Cookie per far aggiornare l'avatar anche in Dashboard/altre pagine (evita cache vecchia)
+  (await cookies()).set(AVATAR_REFRESH_COOKIE, refreshTs, {
+    maxAge: 120,
+    path: "/",
+    httpOnly: true,
+  });
   revalidatePath("/profile");
   revalidatePath("/dashboard");
   redirect("/profile");

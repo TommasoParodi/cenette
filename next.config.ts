@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "20mb", // 3 foto × 5 MB + overhead form
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/**",
+      },
+    ],
+  },
 };
 
 export default withSerwist(nextConfig);

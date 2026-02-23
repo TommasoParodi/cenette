@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { updateProfileDisplayName, uploadAvatar, removeAvatar } from "@/server-actions/profile";
 import { AvatarUpload } from "./AvatarUpload";
@@ -16,7 +18,11 @@ function getInitials(name: string | null | undefined, fallback: string): string 
   return name.slice(0, 2).toUpperCase();
 }
 
-export default async function ProfilePage() {
+type ProfilePageProps = {
+  searchParams?: Promise<{ avatar_refresh?: string }> | { avatar_refresh?: string };
+};
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const supabase = await createSupabaseServerClient();
 
   const {
@@ -27,18 +33,43 @@ export default async function ProfilePage() {
     redirect("/");
   }
 
-  const { data: profile } = await supabase
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as Promise<unknown>).then === "function"
+      ? await (searchParams as Promise<{ avatar_refresh?: string }>)
+      : (searchParams ?? {});
+
+  const avatarRefreshCookie = (await cookies()).get("avatar_refresh")?.value ?? null;
+
+  // Prova con avatar_updated_at (cache busting); se la colonna non esiste, usa query/cookie
+  let profile: { id: string; display_name: string | null; avatar_url: string | null; avatar_updated_at?: string | null } | null = null;
+  let avatarPublicUrl: string | null = null;
+
+  const { data: profileWithTimestamp, error: errWithTs } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url")
+    .select("id, display_name, avatar_url, avatar_updated_at")
     .eq("id", user.id)
     .single();
 
-  let avatarSignedUrl: string | null = null;
-  if (profile?.avatar_url) {
-    const { data: signed } = await supabase.storage
-      .from("avatars")
-      .createSignedUrl(profile.avatar_url, 3600);
-    avatarSignedUrl = signed?.signedUrl ?? null;
+  if (!errWithTs && profileWithTimestamp) {
+    profile = profileWithTimestamp;
+    const timestampForUrl =
+      profile.avatar_updated_at ??
+      resolvedSearchParams.avatar_refresh ??
+      avatarRefreshCookie ??
+      null;
+    avatarPublicUrl = getAvatarPublicUrl(profile.avatar_url ?? null, timestampForUrl);
+  } else {
+    const { data: profileFallback } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    if (profileFallback) {
+      profile = profileFallback;
+      const timestampForUrl =
+        resolvedSearchParams.avatar_refresh ?? avatarRefreshCookie ?? null;
+      avatarPublicUrl = getAvatarPublicUrl(profile.avatar_url ?? null, timestampForUrl);
+    }
   }
 
   const displayName = profile?.display_name ?? user.email ?? "";
@@ -57,7 +88,7 @@ export default async function ProfilePage() {
           <section className="flex flex-col items-center gap-6">
           {/* Avatar cliccabile per caricare immagine */}
           <AvatarUpload
-            avatarSignedUrl={avatarSignedUrl}
+            avatarSignedUrl={avatarPublicUrl}
             initials={initials}
             uploadAvatar={uploadAvatar}
           />

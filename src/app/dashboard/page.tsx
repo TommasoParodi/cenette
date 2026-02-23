@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { AdminIcon } from "@/components/AdminIcon";
 
@@ -23,11 +25,39 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const { data: profile } = await supabase
+  const cookieStore = await cookies();
+  const avatarRefreshCookie = cookieStore.get("avatar_refresh")?.value ?? null;
+
+  type ProfileRow = { id: string; display_name: string | null; avatar_url: string | null; avatar_updated_at?: string | null };
+  let profile: ProfileRow | null = null;
+  let avatarPublicUrl: string | null = null;
+
+  const { data: profileWithTs, error: profileErr } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url")
+    .select("id, display_name, avatar_url, avatar_updated_at")
     .eq("id", user.id)
     .single();
+
+  if (!profileErr && profileWithTs) {
+    profile = profileWithTs;
+    avatarPublicUrl = getAvatarPublicUrl(
+      profile.avatar_url ?? null,
+      profile.avatar_updated_at ?? avatarRefreshCookie ?? null
+    );
+  } else {
+    const { data: profileFallback } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+    if (profileFallback) {
+      profile = profileFallback;
+      avatarPublicUrl = getAvatarPublicUrl(
+        profile.avatar_url ?? null,
+        avatarRefreshCookie ?? null
+      );
+    }
+  }
 
   const { data: memberships } = await supabase
     .from("group_members")
@@ -78,13 +108,6 @@ export default async function DashboardPage() {
   }
 
   const userInitials = getInitials(profile?.display_name ?? user.email ?? "", "?");
-  let avatarSignedUrl: string | null = null;
-  if (profile?.avatar_url) {
-    const { data: signed } = await supabase.storage
-      .from("avatars")
-      .createSignedUrl(profile.avatar_url, 3600);
-    avatarSignedUrl = signed?.signedUrl ?? null;
-  }
 
   return (
     <main className="min-h-screen pb-24">
@@ -106,9 +129,9 @@ export default async function DashboardPage() {
               title={profile?.display_name ?? user.email ?? "Profilo"}
               aria-label="Apri profilo"
             >
-              {avatarSignedUrl ? (
+              {avatarPublicUrl ? (
                 <img
-                  src={avatarSignedUrl}
+                  src={avatarPublicUrl}
                   alt=""
                   width={36}
                   height={36}

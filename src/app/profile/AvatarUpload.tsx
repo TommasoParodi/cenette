@@ -35,6 +35,7 @@ function AvatarUploadLabel({
             height={96}
             className="h-full w-full object-cover"
             unoptimized
+            priority
           />
         ) : (
           <span className="text-2xl font-medium text-foreground" aria-hidden>
