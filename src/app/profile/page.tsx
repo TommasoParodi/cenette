@@ -6,6 +6,7 @@ import { AvatarUpload } from "./AvatarUpload";
 import { RemoveAvatarButton } from "./RemoveAvatarButton";
 import { DisplayNameForm } from "./DisplayNameForm";
 import ProfileLogoutButton from "./ProfileLogoutButton";
+import packageJson from "../../../package.json";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -86,6 +87,10 @@ export default async function ProfilePage() {
           </div>
 
           <ProfileLogoutButton />
+
+          <p className="text-xs text-text-tertiary" aria-label="Versione app">
+            Versione {packageJson.version}
+          </p>
           </section>
         </div>
       </div>
