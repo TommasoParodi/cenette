@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/Button";
+import { InputField } from "@/components/ui/InputField";
 
 type Mode = "login" | "register";
 
@@ -17,6 +19,29 @@ function getPasswordRequirements(pwd: string) {
 function isPasswordValid(pwd: string) {
   const r = getPasswordRequirements(pwd);
   return r.lowercase && r.uppercase && r.digits && r.symbols;
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
 }
 
 export function AuthForm() {
@@ -78,7 +103,6 @@ export function AuthForm() {
       }
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      // Supabase non restituisce errore se l'email esiste già; identities è vuoto in quel caso
       if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
         setMessage({
           type: "error",
@@ -114,22 +138,15 @@ export function AuthForm() {
     clearMessages();
   }
 
-  const inputBase =
-    "w-full rounded-xl border border-separator-line bg-surface px-3 py-2.5 text-foreground placeholder-placeholder focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
-
   if (registrationSuccess) {
     return (
       <div className="w-full max-w-[min(24rem,90vw)] space-y-6 rounded-2xl bg-surface p-8 shadow-lg">
         <p className="text-center text-sm text-green-600">
           Controlla la tua email per il link di conferma, poi accedi.
         </p>
-        <button
-          type="button"
-          onClick={goToLogin}
-          className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-        >
+        <Button type="button" variant="primary" onClick={goToLogin}>
           Vai all&apos;accesso
-        </button>
+        </Button>
       </div>
     );
   }
@@ -137,130 +154,110 @@ export function AuthForm() {
   return (
     <div className="flex w-full max-w-[min(24rem,90vw)] flex-col">
       <div
-        className={`relative space-y-6 rounded-2xl bg-surface p-8 shadow-lg transition-opacity ${
+        className={`relative mt-12 space-y-6 rounded-2xl bg-surface p-8 shadow-lg transition-opacity ${
           googleLoading ? "pointer-events-none select-none opacity-60" : ""
         }`}
         aria-busy={googleLoading}
       >
-        <button
+        <header className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-brand">Cenette</h1>
+          <p className="mt-1 text-sm text-text-tertiary">Ricorda le cene più belle</p>
+        </header>
+
+        <Button
           type="button"
+          variant="secondary"
           onClick={signInWithGoogle}
           disabled={googleLoading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-separator-line bg-surface px-4 py-2.5 text-sm font-medium text-text-muted shadow-sm hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-60"
+          leftIcon={<GoogleIcon />}
         >
-          {googleLoading ? (
-            "Attendere…"
-          ) : (
-            <>
-          <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Accedi con Google
-            </>
-          )}
-        </button>
+          {googleLoading ? "Attendere…" : "Accedi con Google"}
+        </Button>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-separator-line" />
           </div>
-          <div className="relative flex justify-center text-sm text-separator-text">
-            <span className="bg-surface px-3">oppure</span>
+          <div className="relative flex justify-center text-sm font-medium uppercase tracking-wide text-separator-text">
+            <span className="bg-surface px-3">OPPURE</span>
           </div>
         </div>
 
         <form onSubmit={handleEmailSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-label">
-              Email <span aria-hidden="true">*</span>
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="mario@esempio.it"
-              required
-              autoComplete="email"
-              className={inputBase}
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-label">
-              Password <span aria-hidden="true">*</span>
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (mode === "register" && confirmPassword && e.target.value === confirmPassword) setConfirmError(null);
-              }}
-              placeholder={mode === "login" ? "La tua password" : "••••••••"}
-              required
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              className={inputBase}
-            />
-            {mode === "register" && (
-              <ul className="mt-2 space-y-1 text-xs text-text-secondary" aria-live="polite">
-                {[
-                  { key: "lowercase", label: "Lettere minuscole", ok: getPasswordRequirements(password).lowercase },
-                  { key: "uppercase", label: "Lettere maiuscole", ok: getPasswordRequirements(password).uppercase },
-                  { key: "digits", label: "Cifre", ok: getPasswordRequirements(password).digits },
-                  { key: "symbols", label: "Simboli", ok: getPasswordRequirements(password).symbols },
-                ].map(({ key, label, ok }) => (
-                  <li key={key} className={ok ? "text-green-600" : ""}>
-                    {ok ? "✓ " : "○ "}{label}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <InputField
+            id="email"
+            type="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="esempio@email.it"
+            required
+            autoComplete="email"
+          />
+          <InputField
+            id="password"
+            type="password"
+            label="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (mode === "register" && confirmPassword && e.target.value === confirmPassword)
+                setConfirmError(null);
+            }}
+            placeholder="••••••••"
+            required
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            showPasswordToggle
+            labelAction={
+              mode === "login" ? (
+                <a
+                  href="/auth/reset-password"
+                  className="text-sm font-medium text-accent hover:underline focus:outline-none focus:underline"
+                >
+                  Dimenticata?
+                </a>
+              ) : undefined
+            }
+          />
           {mode === "register" && (
-            <div>
-              <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-label">
-                Conferma password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (confirmError) setConfirmError(null);
-                }}
-                onBlur={() => {
-                  if (confirmPassword.trim() && password !== confirmPassword) {
-                    setConfirmError("Le password non corrispondono.");
-                  } else {
-                    setConfirmError(null);
-                  }
-                }}
-                placeholder="••••••••"
-                required
-                autoComplete="new-password"
-                className={`${inputBase} ${confirmError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
-              />
-              {confirmError && (
-                <p className="mt-1 text-sm text-red-600">{confirmError}</p>
-              )}
-            </div>
+            <ul className="mt-2 space-y-1 text-xs text-text-secondary" aria-live="polite">
+              {[
+                { key: "lowercase", label: "Lettere minuscole", ok: getPasswordRequirements(password).lowercase },
+                { key: "uppercase", label: "Lettere maiuscole", ok: getPasswordRequirements(password).uppercase },
+                { key: "digits", label: "Cifre", ok: getPasswordRequirements(password).digits },
+                { key: "symbols", label: "Simboli", ok: getPasswordRequirements(password).symbols },
+              ].map(({ key, label, ok }) => (
+                <li key={key} className={ok ? "text-green-600" : ""}>
+                  {ok ? "✓ " : "○ "}{label}
+                </li>
+              ))}
+            </ul>
+          )}
+          {mode === "register" && (
+            <InputField
+              id="confirmPassword"
+              type="password"
+              label="Conferma password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (confirmError) setConfirmError(null);
+              }}
+              onBlur={() => {
+                if (confirmPassword.trim() && password !== confirmPassword) {
+                  setConfirmError("Le password non corrispondono.");
+                } else {
+                  setConfirmError(null);
+                }
+              }}
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
+              error={!!confirmError}
+            />
+          )}
+          {confirmError && (
+            <p className="mt-1 text-sm text-red-600">{confirmError}</p>
           )}
           {message && (
             <p
@@ -271,8 +268,9 @@ export function AuthForm() {
               {message.text}
             </p>
           )}
-          <button
+          <Button
             type="submit"
+            variant="primary"
             disabled={
               loading ||
               googleLoading ||
@@ -281,10 +279,9 @@ export function AuthForm() {
               (mode === "register" && !confirmPassword.trim()) ||
               (mode === "register" && password !== confirmPassword)
             }
-            className="mt-2 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-60"
           >
             {loading ? "Attendere…" : mode === "login" ? "Accedi" : "Registrati"}
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -305,7 +302,10 @@ export function AuthForm() {
             Hai già un account?{" "}
             <button
               type="button"
-              onClick={() => { setMode("login"); clearMessages(); }}
+              onClick={() => {
+                setMode("login");
+                clearMessages();
+              }}
               className="font-semibold text-accent hover:underline focus:outline-none focus:underline"
             >
               Accedi

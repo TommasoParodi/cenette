@@ -28,6 +28,13 @@ function formatEventDate(iso: string): string {
   });
 }
 
+function formatEventDateOnly(iso: string): string {
+  const d = new Date(iso);
+  const weekday = d.toLocaleDateString("it-IT", { weekday: "long" });
+  const date = d.toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${date}`;
+}
+
 export default async function GroupPage({
   params,
   searchParams,
@@ -152,7 +159,7 @@ export default async function GroupPage({
   })();
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen pb-20">
       <div className="mx-auto max-w-2xl">
         <Topbar
           showBack
@@ -201,7 +208,6 @@ export default async function GroupPage({
                       maxRating != null
                         ? entriesWithRating.find((e) => ratingByEntry[e.id] === maxRating)?.id ?? null
                         : null;
-
                     return entries.map((e) => {
                 const rating = ratingByEntry[e.id];
                 const participantList = participantsByEntry[e.id] ?? [];
@@ -209,12 +215,7 @@ export default async function GroupPage({
                 const isHome = e.type === "HOME";
                 const creatorId = (e as { created_by?: string | null }).created_by ?? null;
                 const isHighestRated = highestRatedEntryId === e.id;
-                const ratingColor =
-                  rating != null && rating >= 8
-                    ? "bg-rating-high"
-                    : rating != null
-                      ? "bg-rating-medium"
-                      : "bg-surface-muted";
+                const extraCount = participantList.length > 3 ? participantList.length - 3 : 0;
 
                 return (
                   <li key={e.id}>
@@ -238,66 +239,50 @@ export default async function GroupPage({
                             sizes="(max-width: 768px) 100vw, 672px"
                           />
                         )}
-                        {rating != null && (
-                          <span
-                            className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold text-white ${ratingColor}`}
-                          >
-                            {rating.toFixed(1)}
-                          </span>
-                        )}
+                        <span
+                          className={`absolute left-2 top-2 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white ${
+                            isHome ? "bg-accent" : "bg-gray-600"
+                          }`}
+                        >
+                          {isHome ? "CASA" : "FUORI"}
+                        </span>
                       </div>
-                      <div className="p-3">
+                      <div className="p-4">
                         <div className="flex items-start justify-between gap-2">
-                          <h2 className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+                          <h2 className="min-w-0 flex-1 text-base font-bold text-foreground">
                             {e.title}
                           </h2>
-                          {isHighestRated && (
+                          {rating != null && (
                             <span
-                              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-medium leading-none text-amber-700 dark:text-amber-400"
-                              title="Punteggio più alto"
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                rating >= 9
+                                  ? "bg-amber-500 text-amber-950"
+                                  : rating >= 7
+                                    ? "bg-amber-400 text-amber-900"
+                                    : rating >= 5
+                                      ? "bg-amber-300 text-amber-800"
+                                      : "bg-amber-200 text-amber-800"
+                              }`}
+                              aria-label={`Voto: ${rating.toFixed(1)}`}
                             >
-                              <svg className="h-5 w-5 shrink-0 align-middle" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                              </svg>
-                              Top
+                              {rating.toFixed(1)}
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center gap-1 text-xs text-text-tertiary">
-                          <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <span>{formatEventDate(e.happened_at)}</span>
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-avatar-member-bg px-2 py-0.5 text-[11px] font-medium text-foreground">
-                            {isHome ? (
-                              <>
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                </svg>
-                                A casa
-                              </>
-                            ) : (
-                              <>
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                Fuori
-                              </>
-                            )}
-                          </span>
-                          <div className="flex items-center gap-0.5">
-                            {participantList.slice(0, 4).map((part, i) => {
+                        <p className="mt-1 text-sm text-text-tertiary">
+                          {formatEventDateOnly(e.happened_at)}
+                        </p>
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="flex items-center">
+                            {participantList.slice(0, 3).map((part, i) => {
                               const isCreator = creatorId != null && part.userId === creatorId;
                               return (
                                 <span
                                   key={`${e.id}-${i}-${part.userId}`}
-                                  className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-medium ${
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface text-xs font-medium first:ml-0 -ml-2 ${
                                     isCreator
-                                      ? "border-amber-400 bg-amber-400/90 text-amber-950"
-                                      : "border-brand bg-avatar-member-bg text-brand"
+                                      ? "bg-amber-400/90 text-amber-950 z-10"
+                                      : "bg-avatar-member-bg text-brand"
                                   }`}
                                   title={isCreator ? "Creatore dell'evento" : undefined}
                                 >
@@ -305,7 +290,24 @@ export default async function GroupPage({
                                 </span>
                               );
                             })}
+                            {extraCount > 0 && (
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-accent -ml-2 text-xs font-semibold text-accent-foreground">
+                                +{extraCount}
+                              </span>
+                            )}
                           </div>
+                          {isHighestRated && (
+                            <span
+                              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-xs font-medium text-amber-500"
+                              title="Punteggio più alto"
+                              aria-label="Evento con il voto più alto"
+                            >
+                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                              </svg>
+                              Top
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Link>
@@ -321,12 +323,16 @@ export default async function GroupPage({
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
+      <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-center px-4 py-4">
         <Link
           href={`/group/${groupId}/new`}
-          className="flex items-center justify-center gap-2 rounded-xl bg-accent-strong px-6 py-3 text-sm font-medium text-accent-foreground shadow-lg transition hover:opacity-90"
+          className="flex items-center justify-center gap-3 rounded-full bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-lg transition hover:opacity-90"
+          aria-label="Aggiungi evento"
         >
-          <span className="text-lg leading-none" aria-hidden>+</span>
+          <span className="text-xl leading-none" aria-hidden>+</span>
+          <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
           Aggiungi evento
         </Link>
       </div>

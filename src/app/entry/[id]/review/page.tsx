@@ -80,12 +80,11 @@ export default async function EntryReviewPage({
         <Topbar
           showBack
           backHref={`/entry/${entryId}`}
-          title={isEdit ? "Modifica recensione" : "Nuova recensione"}
+          title="La tua opinione"
         />
 
         <div className="px-4 pt-6">
-          <section className="rounded-2xl bg-surface p-4 shadow-sm">
-            <ReviewForm
+          <ReviewForm
               entryId={entryId}
               voteMode={(entry.vote_mode ?? "SIMPLE") as "SIMPLE" | "DETAILED"}
               initialRating={myReview?.rating_overall}
@@ -96,7 +95,6 @@ export default async function EntryReviewPage({
               initialRatingLocation={myReview?.rating_location}
               initialPhotoUrl={myReviewPhotoUrl}
             />
-          </section>
         </div>
       </div>
     </main>

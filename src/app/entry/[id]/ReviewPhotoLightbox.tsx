@@ -12,7 +12,7 @@ export function ReviewPhotoLightbox({ src, alt = "Foto recensione" }: { src: str
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-separator-line bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent"
+        className="mx-auto flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-separator-line bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent"
         aria-label="Ingrandisci foto recensione"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}

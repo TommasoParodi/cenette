@@ -14,20 +14,9 @@ export default async function Home() {
   }
 
   return (
-    <main className="flex h-[100dvh] flex-col items-center justify-center overflow-y-auto bg-background font-sans">
-      <header className="mb-8 mt-12 flex flex-col items-center text-center">
-        <h1
-          className="text-4xl font-semibold tracking-tight text-brand"
-          style={{ fontFamily: "var(--font-playfair), serif" }}
-        >
-          Cenette
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          Ricorda le cene più belle
-        </p>
-      </header>
+    <main className="flex h-[100dvh] flex-col items-center justify-center overflow-y-auto bg-background font-sans px-4">
       <AuthForm />
-      <p className="mt-6 text-center text-sm text-text-tertiary">
+      <p className="mt-6 mb-8 text-center text-sm text-text-tertiary">
         Versione {packageJson.version}
       </p>
     </main>

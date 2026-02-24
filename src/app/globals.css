@@ -2,44 +2,49 @@
 
 /* Tema Cenette - colori base e lista gruppi */
 :root {
-  /* Sfondo app (livello globale) */
-  --background: #fbf6f2;
-  --background-primary: #fbf6f2;
-  /* Brand / testo Cenette, iniziali membri */
-  --brand: #A65E51;
-  /* Variante brand header lista (marrone rossastro) */
-  --brand-header: #8c3e34;
+  /* Sfondo app (livello globale) - beige tenue */
+  --background: #F8F4EE;
+  --background-primary: #F8F4EE;
+  /* Brand / logo Cenette, pulsante Accedi, link */
+  --brand: #FFA740;
+  /* Variante brand header lista */
+  --brand-header: #e69530;
   /* Testo secondario (tagline, link sotto card) */
-  --text-secondary: #7B706E;
-  /* Testo terziario (es. "X eventi") */
+  --text-secondary: #4A4A4A;
+  /* Testo terziario (slogan, "OPPURE") */
   --text-tertiary: #888888;
   /* Card e input */
   --surface: #FFFFFF;
   /* Testo pulsante Google e etichette */
-  --text-muted: #3C4043;
-  --label: #3A3A3A;
-  /* Separatori */
-  --separator-text: #AFAFAF;
-  --separator-line: #E0E0E0;
-  /* Superficie muted (cerchio +1, bordi soft) */
-  --surface-muted: #e0e0e0;
-  /* Placeholder */
-  --placeholder: #BDBDBD;
-  /* Accent: pulsante primario, link Registrati, FAB */
-  --accent: #B65541;
+  --text-muted: #4A4A4A;
+  --label: #4A4A4A;
+  /* Separatori e bordi input */
+  --separator-text: #888888;
+  --separator-line: #CCCCCC;
+  /* Superficie muted (pulsante Google) */
+  --surface-muted: #EEEEEE;
+  /* Placeholder e bordi */
+  --placeholder: #BBBBBB;
+  /* Accent: pulsante primario, link Registrati/Dimenticata */
+  --accent: #FFA740;
   --accent-foreground: #FFFFFF;
-  /* Accent FAB/CTA (marrone rossastro scuro) */
-  --accent-strong: #bd593f;
+  /* Accent FAB/CTA */
+  --accent-strong: #e69530;
   /* Avatar utente (rosa pallido) */
   --avatar-user-bg: #fce3e3;
   /* Avatar membri (pesca/arancio chiaro) */
   --avatar-member-bg: #f9e5d8;
-  /* Rating medio (arancio/marrone) */
+  /* Rating medio (arancio) */
   --rating-medium: #e5906c;
-  /* Rating alto (rosso/marrone scuro) */
+  /* Rating alto */
   --rating-high: #c3503b;
+  /* Badge Top / stella (giallo) */
+  --badge-top: #ca8a04;
   /* Testo generico su sfondo chiaro */
-  --foreground: #3A3A3A;
+  --foreground: #4A4A4A;
+  /* Base per tutti gli input: sfondo e bordo tenui, poco contrasto */
+  --input-bg: #F5F5F7;
+  --input-border: #E8E9EC;
 }
 
 @theme inline {
@@ -65,7 +70,10 @@
   --color-avatar-member-bg: var(--avatar-member-bg);
   --color-rating-medium: var(--rating-medium);
   --color-rating-high: var(--rating-high);
+  --color-badge-top: var(--badge-top);
   --color-foreground: var(--foreground);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

@@ -11,6 +11,7 @@ import {
 import { compressPhotoFiles } from "@/lib/compress-photos";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { inputBaseClassName, inputDropzoneClassName } from "@/components/ui/inputBaseStyles";
 
 export type EntryFormMember = { id: string; displayName: string };
 export type EntryFormPhotoItem = { id: string; url: string };
@@ -60,8 +61,11 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-const inputClass =
-  "w-full rounded-xl border border-separator-line bg-surface px-3 py-2.5 text-foreground placeholder-placeholder focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+const IconArrowRight = () => (
+  <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+  </svg>
+);
 
 export function EntryForm(props: EntryFormProps) {
   const isCreate = props.mode === "create";
@@ -84,6 +88,7 @@ export function EntryForm(props: EntryFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
+  const [uploadingPreviewUrl, setUploadingPreviewUrl] = useState<string | null>(null);
   const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle ?? "");
@@ -93,51 +98,81 @@ export function EntryForm(props: EntryFormProps) {
 
   const isTitleEmpty = !title.trim();
 
-  const totalPhotoCount = isCreate ? pendingPhotos.length : serverPhotos.length;
+  const totalPhotoCount = isCreate
+    ? pendingPhotos.length
+    : serverPhotos.length + (uploadingPreviewUrl ? 1 : 0);
   const canAddMorePhotos = totalPhotoCount < MAX_PHOTOS;
 
   useEffect(() => {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      if (uploadingPreviewUrl) URL.revokeObjectURL(uploadingPreviewUrl);
     };
-  }, [previewUrls]);
+  }, [previewUrls, uploadingPreviewUrl]);
 
   async function handleAddPhotos(filesFromInput?: FileList | null) {
     const input = photoInputRef.current;
     const rawFiles = filesFromInput ? Array.from(filesFromInput) : Array.from(input?.files ?? []);
     if (!rawFiles.length) {
-      if (!filesFromInput) setPhotoAddError("Seleziona almeno una foto.");
+      if (!filesFromInput) setPhotoAddError("Seleziona una foto.");
       return;
     }
     setPhotoAddError(null);
-    setPhotoAddPending(true);
-    const remaining = Math.max(0, MAX_PHOTOS - totalPhotoCount);
-    const raw = rawFiles.slice(0, remaining);
-    if (raw.length === 0) {
-      setPhotoAddError("Puoi aggiungere al massimo 3 foto.");
+    const raw = rawFiles.slice(0, 1);
+    const currentCount = isCreate ? pendingPhotos.length : serverPhotos.length + (uploadingPreviewUrl ? 1 : 0);
+    const remaining = Math.max(0, MAX_PHOTOS - currentCount);
+    if (remaining === 0 || raw.length === 0) {
+      if (remaining === 0) setPhotoAddError("Puoi aggiungere al massimo 3 foto.");
+      return;
+    }
+    if (isCreate) {
+      const instantUrl = URL.createObjectURL(raw[0]);
+      setPreviewUrls((prev) => [...prev, instantUrl].slice(0, MAX_PHOTOS));
+      setPendingPhotos((prev) => [...prev, raw[0]].slice(0, MAX_PHOTOS));
+      if (input) input.value = "";
+      setPhotoAddPending(true);
+      try {
+        const compressed = await compressPhotoFiles(raw);
+        const newUrl = URL.createObjectURL(compressed[0]);
+        setPreviewUrls((prev) => {
+          const next = [...prev];
+          if (next.length > 0) URL.revokeObjectURL(next[next.length - 1]!);
+          next[next.length - 1] = newUrl;
+          return next;
+        });
+        setPendingPhotos((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = compressed[0];
+          return next;
+        });
+      } catch {
+        setPhotoAddError("Errore durante la compressione.");
+        setPendingPhotos((prev) => prev.slice(0, -1));
+        setPreviewUrls((prev) => {
+          const next = prev.slice(0, -1);
+          URL.revokeObjectURL(instantUrl);
+          return next;
+        });
+      }
       setPhotoAddPending(false);
       return;
     }
+    const instantUrl = URL.createObjectURL(raw[0]);
+    setUploadingPreviewUrl(instantUrl);
+    setPhotoAddPending(true);
+    if (input) input.value = "";
     try {
       const compressed = await compressPhotoFiles(raw);
-      if (isCreate) {
-        const newUrls = compressed.map((f) => URL.createObjectURL(f));
-        setPendingPhotos((prev) => [...prev, ...compressed].slice(0, MAX_PHOTOS));
-        setPreviewUrls((prev) => [...prev, ...newUrls].slice(0, MAX_PHOTOS));
-        if (input) input.value = "";
-      } else {
-        const formData = new FormData();
-        for (const f of compressed) formData.append("photos", f);
-        const result = await uploadEntryPhotos(entryId!, formData);
-        if (result?.error) setPhotoAddError(result.error);
-        else if (result?.success) {
-          if (input) input.value = "";
-          router.refresh();
-        }
-      }
+      const formData = new FormData();
+      formData.append("photos", compressed[0]);
+      const result = await uploadEntryPhotos(entryId!, formData);
+      if (result?.error) setPhotoAddError(result.error);
+      else if (result?.success) router.refresh();
     } catch {
-      setPhotoAddError(isCreate ? "Errore durante la compressione." : "Errore di caricamento.");
+      setPhotoAddError("Errore di caricamento.");
     }
+    setUploadingPreviewUrl(null);
+    URL.revokeObjectURL(instantUrl);
     setPhotoAddPending(false);
   }
 
@@ -215,9 +250,9 @@ export function EntryForm(props: EntryFormProps) {
   const submitLabel = isCreate ? (pending ? "Creazione in corso…" : "Salva evento") : (pending ? "Salvataggio…" : "Salva modifiche");
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="relative flex flex-col gap-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="relative flex flex-col pb-8">
       {pending && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/80" aria-hidden>
+        <div className="fixed inset-0 z-10 flex items-center justify-center bg-background/80" aria-hidden>
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-separator-line border-t-accent" />
         </div>
       )}
@@ -225,8 +260,8 @@ export function EntryForm(props: EntryFormProps) {
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="vote_mode" value={voteMode} />
 
-      <section>
-        <label htmlFor="title" className="mb-2 block text-sm font-semibold text-foreground">
+      <section className="mb-8">
+        <label htmlFor="title" className="mb-3 block text-base font-bold text-foreground">
           Titolo <span className="text-red-600" aria-hidden>*</span>
         </label>
         <input
@@ -237,35 +272,30 @@ export function EntryForm(props: EntryFormProps) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="es. Carbonara da Marco"
           required
-          className={inputClass}
+          className={inputBaseClassName}
         />
       </section>
 
-      <section>
-        <label htmlFor="happened_at" className="mb-2 block text-sm font-semibold text-foreground">Data</label>
-        <div className="relative">
-          <input
-            id="happened_at"
-            type="date"
-            name="happened_at"
-            required
-            defaultValue={defaultHappenedAt}
-            className={`${inputClass} pr-10`}
-          />
-          <svg className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
+      <section className="mb-8">
+        <label htmlFor="happened_at" className="mb-3 block text-base font-bold text-foreground">Data</label>
+        <input
+          id="happened_at"
+          type="date"
+          name="happened_at"
+          required
+          defaultValue={defaultHappenedAt}
+          className={inputBaseClassName}
+        />
       </section>
 
-      <section>
-        <span className="mb-2 block text-sm font-semibold text-foreground">Tipo</span>
+      <section className="mb-8">
+        <span className="mb-3 block text-base font-bold text-foreground">Tipo</span>
         <div className="flex flex-wrap justify-center gap-2">
           <button
             type="button"
             onClick={() => setType("HOME")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              type === "HOME" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+              type === "HOME" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -277,7 +307,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setType("OUT")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              type === "OUT" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+              type === "OUT" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,14 +319,14 @@ export function EntryForm(props: EntryFormProps) {
         </div>
       </section>
 
-      <section>
-        <span className="mb-2 block text-sm font-semibold text-foreground">Modalità voto</span>
+      <section className="mb-8">
+        <span className="mb-3 block text-base font-bold text-foreground">Modalità voto</span>
         <div className="flex flex-wrap justify-center gap-2">
           <button
             type="button"
             onClick={() => setVoteMode("SIMPLE")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              voteMode === "SIMPLE" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+              voteMode === "SIMPLE" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,7 +338,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setVoteMode("DETAILED")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              voteMode === "DETAILED" ? "bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+              voteMode === "DETAILED" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,20 +349,20 @@ export function EntryForm(props: EntryFormProps) {
         </div>
       </section>
 
-      <section>
-        <label htmlFor="description" className="mb-2 block text-sm font-semibold text-foreground">Descrizione</label>
+      <section className="mb-8">
+        <label htmlFor="description" className="mb-3 block text-base font-bold text-foreground">Descrizione</label>
         <textarea
           id="description"
           name="description"
           rows={3}
           placeholder="Racconta qualcosa su questa cena..."
           defaultValue={defaultDescription}
-          className={inputClass}
+          className={inputBaseClassName}
         />
       </section>
 
-      <section>
-        <span className="mb-2 block text-sm font-semibold text-foreground">Partecipanti</span>
+      <section className="mb-8">
+        <span className="mb-3 block text-base font-bold text-foreground">Partecipanti</span>
         <ul className="flex flex-wrap gap-2">
           {props.members.map((m) => {
             const isCreator = m.id === creatorId;
@@ -342,7 +372,7 @@ export function EntryForm(props: EntryFormProps) {
               <li key={m.id}>
                 <label
                   className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${
-                    isCreator ? "cursor-default bg-accent-strong text-accent-foreground" : "bg-avatar-member-bg text-foreground hover:bg-surface-muted has-[:checked]:bg-accent-strong has-[:checked]:text-accent-foreground"
+                    isCreator ? "cursor-default bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20 has-[:checked]:bg-accent has-[:checked]:text-accent-foreground"
                   }`}
                   title={isCreator ? "L'organizzatore è sempre partecipante" : undefined}
                 >
@@ -363,77 +393,113 @@ export function EntryForm(props: EntryFormProps) {
         </ul>
       </section>
 
-      <section>
-        <span className="mb-2 block text-sm font-semibold text-foreground">Foto (max 3)</span>
-        {(serverPhotos.length > 0 || previewUrls.length > 0) && (
-          <div className="mb-3 flex flex-wrap justify-center gap-2">
-            {serverPhotos.map(({ id, url }) => (
-              <div key={id} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-24 w-24 rounded-xl border border-separator-line object-cover" />
+      <section className="mb-8">
+        <h2 className="mb-3 text-base font-bold text-foreground">Foto (max 3)</h2>
+        <input
+          ref={photoInputRef}
+          id="entry-photos"
+          type="file"
+          name="photos"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="sr-only"
+          aria-label="Aggiungi foto"
+          onChange={handlePhotoInputChange}
+        />
+        <div className="flex justify-center gap-3">
+          {[0, 1, 2].map((slotIndex) => {
+            const serverPhoto = serverPhotos[slotIndex];
+            const previewUrl = previewUrls[slotIndex];
+            const hasPhoto = !!serverPhoto || previewUrl !== undefined;
+            const isAddSlot = canAddMorePhotos && slotIndex === totalPhotoCount;
+
+            if (!isCreate && slotIndex === serverPhotos.length && uploadingPreviewUrl) {
+              return (
+                <div key="uploading" className="relative aspect-square w-full max-w-[120px] shrink-0 rounded-xl border-2 border-dashed border-[var(--input-border)] bg-[var(--input-bg)]">
+                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={uploadingPreviewUrl} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30">
+                    <LoadingSpinner className="h-8 w-8 border-2 border-white/40 border-t-white" />
+                  </div>
+                </div>
+              );
+            }
+            if (isAddSlot) {
+              return (
                 <button
+                  key="add"
                   type="button"
-                  onClick={() => handleRemoveServerPhoto(id)}
-                  disabled={removingPhotoId === id}
-                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow disabled:opacity-70"
-                  aria-label={removingPhotoId === id ? "Sto rimuovendo la foto…" : "Rimuovi foto"}
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoAddPending}
+                  className="flex aspect-square w-full max-w-[120px] flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-accent bg-transparent transition hover:bg-accent/10 disabled:opacity-50"
+                  aria-label="Aggiungi foto"
                 >
-                  {removingPhotoId === id ? (
-                    <LoadingSpinner className="h-3.5 w-3.5 border-2 border-surface/40 border-t-surface" />
-                  ) : (
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/icons/camera-plus.png" alt="" className="h-10 w-10 object-contain mix-blend-multiply" width={40} height={40} aria-hidden />
+                  <span className="text-xs font-bold uppercase tracking-wide text-accent">Aggiungi</span>
+                </button>
+              );
+            }
+            if (serverPhoto) {
+              return (
+                <div key={serverPhoto.id} className="relative aspect-square w-full max-w-[120px] shrink-0 rounded-xl border-2 border-dashed border-[var(--input-border)] bg-[var(--input-bg)]">
+                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={serverPhoto.url} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveServerPhoto(serverPhoto.id)}
+                    disabled={removingPhotoId === serverPhoto.id}
+                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-white shadow disabled:opacity-70"
+                    aria-label={removingPhotoId === serverPhoto.id ? "Sto rimuovendo la foto…" : "Rimuovi foto"}
+                  >
+                    {removingPhotoId === serverPhoto.id ? (
+                      <LoadingSpinner className="h-3.5 w-3.5 border-2 border-white/40 border-t-white" />
+                    ) : (
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              );
+            }
+            if (previewUrl !== undefined) {
+              return (
+                <div key={`p-${slotIndex}`} className="relative aspect-square w-full max-w-[120px] shrink-0 rounded-xl border-2 border-dashed border-[var(--input-border)] bg-[var(--input-bg)]">
+                  <div className="absolute inset-0 overflow-hidden rounded-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePendingPhoto(slotIndex)}
+                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-white shadow"
+                    aria-label="Rimuovi foto"
+                  >
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  )}
-                </button>
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div
+                key={`empty-${slotIndex}`}
+                className="flex aspect-square w-full max-w-[120px] shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-[var(--input-border)] bg-[var(--input-bg)]"
+                aria-hidden
+              >
+                <svg className="h-8 w-8 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
-            ))}
-            {previewUrls.map((url, i) => (
-              <div key={`p-${i}`} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-24 w-24 rounded-xl border border-separator-line object-cover" />
-                <button
-                  type="button"
-                  onClick={() => handleRemovePendingPhoto(i)}
-                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow"
-                  aria-label="Rimuovi foto"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {canAddMorePhotos && (
-          <>
-            <input
-              ref={photoInputRef}
-              id="entry-photos"
-              type="file"
-              name="photos"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              className="sr-only"
-              aria-label="Aggiungi foto"
-              onChange={handlePhotoInputChange}
-            />
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              disabled={photoAddPending}
-              className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-separator-line bg-surface py-8 text-text-secondary transition hover:border-accent/50 hover:bg-avatar-member-bg/30 disabled:opacity-50"
-            >
-              <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-xs font-medium">Aggiungi foto</span>
-              <span className="text-xs text-text-secondary">JPEG, PNG, WebP o GIF, max 5 MB</span>
-            </button>
-            {photoAddError && <p className="mt-1 text-xs text-red-600">{photoAddError}</p>}
-          </>
-        )}
+            );
+          })}
+        </div>
+        {photoAddError && <p className="mt-2 text-xs text-red-600">{photoAddError}</p>}
       </section>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -451,9 +517,10 @@ export function EntryForm(props: EntryFormProps) {
       <button
         type="submit"
         disabled={pending || isTitleEmpty}
-        className="w-full rounded-xl bg-accent-strong py-3 text-sm font-medium text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-4 text-base font-semibold text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitLabel}
+        {!pending && <IconArrowRight />}
       </button>
     </form>
   );

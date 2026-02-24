@@ -31,11 +31,11 @@ export function FilterAndListWrapper({ groupId, currentSort, listContent }: Filt
 
   return (
     <>
-      <div className="mt-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-3">
         <EventFilterTabs groupId={groupId} onFilterChange={onFilterChange} />
         <EventSortTabs groupId={groupId} currentSort={currentSort} onSortChange={onSortChange} />
       </div>
-      <div className="relative min-h-[120px]">
+      <div className="relative mb-6 min-h-[120px]">
         {isPending && (
           <div
             className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-surface/80"

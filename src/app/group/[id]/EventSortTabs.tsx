@@ -47,34 +47,36 @@ export function EventSortTabs({ groupId, currentSort, onSortChange }: EventSortT
 
   return (
     <div className="relative shrink-0" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-full bg-avatar-member-bg px-3 py-2 text-sm font-medium text-foreground transition hover:bg-surface-muted"
-        aria-expanded={open}
-        aria-haspopup="true"
-        aria-label="Ordina per"
-      >
-        <span className="hidden sm:inline">Ordina</span>
-        <svg
-          className="h-4 w-4 shrink-0"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
+      <div className="inline-flex rounded-full bg-gray-200 p-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-gray-500 transition hover:text-foreground"
+          aria-expanded={open}
+          aria-haspopup="true"
+          aria-label="Ordina per"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-        </svg>
-        <svg
-          className={`h-4 w-4 shrink-0 transition ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          <span>Ordina</span>
+          <svg
+            className="h-4 w-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          <svg
+            className={`h-4 w-4 shrink-0 transition ${open ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
       {open && (
         <div
           className="absolute right-0 top-full z-20 mt-1.5 min-w-[180px] rounded-xl border border-separator-line bg-surface py-1 shadow-lg"
@@ -95,13 +97,13 @@ export function EventSortTabs({ groupId, currentSort, onSortChange }: EventSortT
                     }}
                     className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition ${
                       isActive
-                        ? "bg-accent/15 font-medium text-accent-foreground"
+                        ? "bg-accent/15 font-medium text-foreground"
                         : "text-foreground hover:bg-surface-muted"
                     }`}
                   >
                     {label}
                     {isActive && (
-                      <span className="ml-auto text-accent-strong" aria-hidden>
+                      <span className="ml-auto text-foreground" aria-hidden>
                         ✓
                       </span>
                     )}
@@ -112,14 +114,14 @@ export function EventSortTabs({ groupId, currentSort, onSortChange }: EventSortT
                     role="menuitem"
                     className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition ${
                       isActive
-                        ? "bg-accent/15 font-medium text-accent-foreground"
+                        ? "bg-accent/15 font-medium text-foreground"
                         : "text-foreground hover:bg-surface-muted"
                     }`}
                     onClick={() => setOpen(false)}
                   >
                     {label}
                     {isActive && (
-                      <span className="ml-auto text-accent-strong" aria-hidden>
+                      <span className="ml-auto text-foreground" aria-hidden>
                         ✓
                       </span>
                     )}

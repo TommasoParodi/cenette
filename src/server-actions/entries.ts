@@ -586,7 +586,8 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
   }
 
   const removePhoto = formData.get("remove_photo") === "1";
-  if (removePhoto && upserted.photo_path) {
+  const hasNewPhoto = photoFile && photoFile instanceof File && photoFile.size > 0;
+  if (removePhoto && !hasNewPhoto && upserted.photo_path) {
     await supabase.storage.from(bucket).remove([upserted.photo_path]);
     await supabase.from("reviews").update({ photo_path: null }).eq("id", reviewId);
   }

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
-import { AdminIcon } from "@/components/AdminIcon";
+import { CenetteLogo } from "@/components/CenetteLogo";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -13,6 +13,16 @@ function getInitials(name: string | null | undefined, fallback: string): string 
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
+
+function PeoplePlusIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+type MemberInfo = { initials: string; avatarUrl: string | null };
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -81,47 +91,48 @@ export default async function DashboardPage() {
   const groupIds = groups.map((g) => g.id);
 
   const entryCountByGroup: Record<string, number> = {};
+  const entryIdsByGroup: Record<string, string[]> = {};
   if (groupIds.length > 0) {
     const { data: entries } = await supabase
       .from("entries")
-      .select("group_id")
+      .select("id, group_id")
       .in("group_id", groupIds);
     entries?.forEach((e) => {
       entryCountByGroup[e.group_id] = (entryCountByGroup[e.group_id] ?? 0) + 1;
+      if (!entryIdsByGroup[e.group_id]) entryIdsByGroup[e.group_id] = [];
+      entryIdsByGroup[e.group_id].push(e.id);
     });
   }
 
-  const membersByGroup: Record<string, string[]> = {};
+  const membersByGroup: Record<string, MemberInfo[]> = {};
   if (groupIds.length > 0) {
     const { data: members } = await supabase
       .from("group_members")
-      .select("group_id, profiles(display_name)")
+      .select("group_id, profiles(id, display_name, avatar_url, avatar_updated_at)")
       .in("group_id", groupIds);
     members?.forEach((m) => {
-      const raw = (m as { profiles: { display_name: string | null } | { display_name: string | null }[] | null }).profiles;
+      const raw = (m as { profiles: ProfileRow | ProfileRow[] | null }).profiles;
       const p = Array.isArray(raw) ? raw[0] : raw;
       const name = p?.display_name ?? null;
       const initials = getInitials(name, "?");
+      const avatarUrl = p
+        ? getAvatarPublicUrl(
+            p.avatar_url ?? null,
+            p.avatar_updated_at ?? avatarRefreshCookie ?? null
+          )
+        : null;
       if (!membersByGroup[m.group_id]) membersByGroup[m.group_id] = [];
-      membersByGroup[m.group_id].push(initials);
+      membersByGroup[m.group_id].push({ initials, avatarUrl });
     });
   }
 
   const userInitials = getInitials(profile?.display_name ?? user.email ?? "", "?");
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen pb-20">
       <div className="mx-auto max-w-2xl">
         <Topbar
-          title={
-            <Link
-              href="/dashboard"
-              className="text-xl font-semibold text-brand-header"
-              style={{ fontFamily: "var(--font-playfair), serif" }}
-            >
-              Cenette
-            </Link>
-          }
+          title={<CenetteLogo href="/dashboard" />}
           right={
             <Link
               href="/profile"
@@ -144,93 +155,95 @@ export default async function DashboardPage() {
           }
         />
 
-        <div className="px-6 pt-6">
-          <section className="mt-6 mb-8">
-          <h2 className="mb-4 text-lg font-medium text-foreground">
-            I tuoi gruppi
-          </h2>
-          {groups.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-separator-line bg-surface p-8 text-center text-text-secondary shadow-sm">
-              Non sei in nessun gruppo. Crea un gruppo o entra con un codice
-              invito.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {groups.map((g) => {
-                const count = entryCountByGroup[g.id] ?? 0;
-                const initials = membersByGroup[g.id] ?? [];
-                return (
-                  <li key={g.id}>
-                    <Link
-                      href={`/group/${g.id}`}
-                      className="block rounded-2xl bg-surface p-4 shadow-sm transition hover:shadow-md"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="min-w-0 font-semibold text-foreground">
-                            {g.name}
-                          </span>
-                          {g.created_by === user.id ? (
-                            <span
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand"
-                              title="Sei l'admin di questo gruppo"
-                              aria-label="Admin del gruppo"
-                            >
-                              <AdminIcon className="h-5 w-5" />
+        <div className="px-4 pt-4">
+          <section className="mb-8">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-foreground">
+                I tuoi gruppi
+              </h2>
+              {groups.length > 0 && (
+                <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-medium text-text-muted">
+                  {groups.length} Attiv{groups.length === 1 ? "o" : "i"}
+                </span>
+              )}
+            </div>
+
+            {groups.length === 0 ? (
+              <div className="flex flex-col items-center p-8">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand/10 text-brand">
+                  <PeoplePlusIcon className="h-10 w-10" />
+                </div>
+                <h3 className="mt-4 text-center text-lg font-bold text-foreground">
+                  Inizia a organizzare le tue cene!
+                </h3>
+                <p className="mt-2 text-center text-sm text-text-secondary">
+                  Non hai ancora gruppi. Creane uno per invitare i tuoi amici e scoprire nuovi sapori.
+                </p>
+                <Link
+                  href="/dashboard/new"
+                  className="mt-6 rounded-xl border-2 border-accent px-5 py-2.5 text-sm font-semibold text-accent transition hover:bg-accent/5"
+                >
+                  Scopri come funziona
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {groups.map((g) => {
+                  const count = entryCountByGroup[g.id] ?? 0;
+                  const members = membersByGroup[g.id] ?? [];
+                  return (
+                    <li key={g.id}>
+                      <Link
+                        href={`/group/${g.id}`}
+                        className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm transition hover:shadow-md"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold text-foreground">
+                              {g.name}
                             </span>
-                          ) : null}
+                          </div>
+                          <p className="mt-1 text-sm text-text-tertiary">
+                            {count} {count === 1 ? "evento" : "eventi"} organizzati
+                          </p>
+                          <div className="mt-3 flex items-center">
+                            {(members.length === 0 ? [{ initials: "—", avatarUrl: null }] : members.slice(0, 4)).map((mem, i) => (
+                              <span
+                                key={`${g.id}-${i}-${mem.initials}`}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-xs font-medium text-foreground first:ml-0 -ml-2.5"
+                              >
+                                {mem.avatarUrl ? (
+                                  <img src={mem.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  mem.initials
+                                )}
+                              </span>
+                            ))}
+                            {members.length > 4 && (
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-surface-muted -ml-2.5 text-xs font-medium text-foreground">
+                                +{members.length - 4}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="mt-1.5 flex items-center gap-1.5 text-sm text-text-tertiary">
-                          <svg
-                            className="h-4 w-4 shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span>
-                            {count} {count === 1 ? "evento" : "eventi"}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex items-center">
-                          {(initials.length === 0 ? [null] : initials.slice(0, 5)).map((init, i) => (
-                            <span
-                              key={init === null ? `${g.id}-empty` : `${g.id}-${i}-${init}`}
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-avatar-member-bg text-xs font-medium text-brand first:ml-0 -ml-2.5"
-                            >
-                              {init ?? "—"}
-                            </span>
-                          ))}
-                          {initials.length > 5 && (
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-surface-muted -ml-2.5 text-xs font-medium text-foreground">
-                              +{initials.length - 5}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
+      <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-center px-4 py-4">
         <Link
           href="/dashboard/new"
-          className="flex items-center justify-center gap-2 rounded-xl bg-accent-strong px-6 py-3 text-sm font-medium text-accent-foreground shadow-lg transition hover:opacity-90"
+          className="flex items-center justify-center gap-3 rounded-full bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-lg transition hover:opacity-90"
+          aria-label="Crea nuovo gruppo"
         >
-          <span className="text-lg leading-none" aria-hidden>+</span>
+          <span className="text-xl leading-none" aria-hidden>+</span>
+          <PeoplePlusIcon className="h-5 w-5" />
           Nuovo gruppo
         </Link>
       </div>

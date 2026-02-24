@@ -8,7 +8,7 @@ type EntryFormPageLayoutProps = {
 
 /**
  * Layout condiviso per le pagine "Nuovo evento" e "Modifica evento":
- * topbar + contenuto in card con stesso stile.
+ * topbar + contenuto (stile allineato alla pagina recensioni, senza card).
  */
 export function EntryFormPageLayout({
   title,
@@ -21,9 +21,7 @@ export function EntryFormPageLayout({
         <Topbar showBack backHref={backHref} title={title} />
 
         <div className="px-4 pt-6">
-          <section className="rounded-2xl bg-surface p-4 shadow-sm">
-            {children}
-          </section>
+          {children}
         </div>
       </div>
     </main>

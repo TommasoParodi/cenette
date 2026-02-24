@@ -35,14 +35,14 @@ export function EventFilterTabs({ groupId, onFilterChange }: EventFilterTabsProp
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="inline-flex rounded-full bg-gray-200 p-1.5">
       {FILTERS.map(({ value, label }) => {
         const isActive = current === value;
         const href = buildHref(value);
         const className = `rounded-full px-4 py-2 text-sm font-medium transition ${
           isActive
-            ? "bg-accent-strong text-accent-foreground"
-            : "bg-avatar-member-bg text-foreground hover:bg-surface-muted"
+            ? "bg-white text-brand shadow-sm"
+            : "text-gray-500 hover:text-foreground"
         }`;
         if (onFilterChange) {
           return (

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export function ReviewComment({ text }: { text: string }) {
+export function ReviewComment({ text, quoted }: { text: string; quoted?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
   const [showReadMore, setShowReadMore] = useState(false);
@@ -16,12 +16,12 @@ export function ReviewComment({ text }: { text: string }) {
   if (!text) return null;
 
   return (
-    <div className="py-1 pl-3 pr-2">
+    <div className={quoted ? "px-2 py-3" : "py-1 pl-3 pr-2"}>
       <p
         ref={ref}
-        className={`text-sm text-text-secondary ${!expanded ? "line-clamp-8" : ""}`}
+        className={`text-text-secondary ${quoted ? "text-base italic" : "text-sm"} ${!expanded ? "line-clamp-8" : ""}`}
       >
-        {text}
+        {quoted ? <>&quot;{text}&quot;</> : text}
       </p>
       {!expanded && showReadMore && (
         <button
