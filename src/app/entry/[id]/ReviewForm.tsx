@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useEffect } from "react";
+import { useActionState, useRef, useState, useEffect, type ReactElement } from "react";
 import { useFormStatus } from "react-dom";
 import { createOrUpdateReview } from "@/server-actions/entries";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -70,7 +70,7 @@ function SliderRow({
   name: string;
   label: string;
   defaultValue: number;
-  icon: () => JSX.Element;
+  icon: () => ReactElement;
 }) {
   const [value, setValue] = useState(defaultValue);
 
