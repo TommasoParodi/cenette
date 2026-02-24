@@ -10,6 +10,7 @@ import {
 } from "@/server-actions/entries";
 import { compressPhotoFiles } from "@/lib/compress-photos";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export type EntryFormMember = { id: string; displayName: string };
 export type EntryFormPhotoItem = { id: string; url: string };
@@ -83,6 +84,7 @@ export function EntryForm(props: EntryFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
+  const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle ?? "");
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +156,7 @@ export function EntryForm(props: EntryFormProps) {
   }
 
   async function handleRemoveServerPhoto(photoId: string) {
+    setRemovingPhotoId(photoId);
     const formData = new FormData();
     formData.append("photoId", photoId);
     try {
@@ -167,6 +170,8 @@ export function EntryForm(props: EntryFormProps) {
         return;
       }
       setError("Errore durante la rimozione della foto.");
+    } finally {
+      setRemovingPhotoId(null);
     }
   }
 
@@ -369,12 +374,17 @@ export function EntryForm(props: EntryFormProps) {
                 <button
                   type="button"
                   onClick={() => handleRemoveServerPhoto(id)}
-                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow"
-                  aria-label="Rimuovi foto"
+                  disabled={removingPhotoId === id}
+                  className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-surface shadow disabled:opacity-70"
+                  aria-label={removingPhotoId === id ? "Sto rimuovendo la foto…" : "Rimuovi foto"}
                 >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  {removingPhotoId === id ? (
+                    <LoadingSpinner className="h-3.5 w-3.5 border-2 border-surface/40 border-t-surface" />
+                  ) : (
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
                 </button>
               </div>
             ))}
