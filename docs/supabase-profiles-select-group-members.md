@@ -21,9 +21,12 @@ In questo modo:
 
 Apri **Supabase Dashboard → SQL Editor → New query**, incolla lo script qui sotto ed esegui.
 
+Se la policy **esiste già**, lo script non darà errore: `DROP POLICY IF EXISTS` la rimuove e poi la ricrea.
+
 ```sql
 -- Permette di leggere i profili (es. display_name) degli utenti con cui condividi almeno un gruppo.
 -- Utile per mostrare iniziali/nomi in: pagina gruppo, lista eventi, partecipanti, dashboard.
+DROP POLICY IF EXISTS "profiles_select_group_members" ON public.profiles;
 CREATE POLICY "profiles_select_group_members"
 ON public.profiles
 FOR SELECT
@@ -39,7 +42,7 @@ USING (
 );
 ```
 
-Se Supabase ti segnala che esiste già una policy di SELECT su `profiles` che usa `id = auth.uid()` (solo proprio profilo), **non rimuoverla**: questa nuova policy si **aggiunge** alle esistenti. Con RLS, per la SELECT basta che **almeno una** policy permetta l’accesso alla riga.
+Se esiste già una policy di SELECT su `profiles` che usa `id = auth.uid()` (solo proprio profilo), **non rimuoverla**: questa policy si **aggiunge** alle esistenti. Con RLS, per la SELECT basta che **almeno una** policy permetta l’accesso alla riga.
 
 ## Verifica
 

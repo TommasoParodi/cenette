@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { CenetteLogo } from "@/components/CenetteLogo";
+import { AdminIcon } from "@/components/AdminIcon";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -105,28 +106,24 @@ export default async function DashboardPage() {
   }
 
   const membersByGroup: Record<string, MemberInfo[]> = {};
-  if (groupIds.length > 0) {
-    const { data: members } = await supabase
-      .from("group_members")
-      .select("group_id, profiles(id, display_name, avatar_url, avatar_updated_at)")
-      .in("group_id", groupIds);
-    members?.forEach((m) => {
-      const raw = (m as { profiles: ProfileRow | ProfileRow[] | null }).profiles;
-      const p = Array.isArray(raw) ? raw[0] : raw;
-      const name = p?.display_name ?? null;
-      const initials = getInitials(name, "?");
-      const avatarUrl = p
-        ? getAvatarPublicUrl(
-            p.avatar_url ?? null,
-            p.avatar_updated_at ?? avatarRefreshCookie ?? null
-          )
-        : null;
-      if (!membersByGroup[m.group_id]) membersByGroup[m.group_id] = [];
-      membersByGroup[m.group_id].push({ initials, avatarUrl });
+  if (groups.length > 0) {
+    const { data: rpcRows } = await supabase.rpc("get_my_groups_members");
+    const rows = (rpcRows ?? []) as Array<{ group_id: string; display_name: string | null }>;
+    rows.forEach((r) => {
+      if (!membersByGroup[r.group_id]) membersByGroup[r.group_id] = [];
+      membersByGroup[r.group_id].push({
+        initials: getInitials(r.display_name, "?"),
+        avatarUrl: null,
+      });
     });
   }
 
   const userInitials = getInitials(profile?.display_name ?? user.email ?? "", "?");
+  groups.forEach((g) => {
+    if (!membersByGroup[g.id] || membersByGroup[g.id].length === 0) {
+      membersByGroup[g.id] = [{ initials: userInitials, avatarUrl: avatarPublicUrl }];
+    }
+  });
 
   return (
     <main className="min-h-screen pb-20">
@@ -202,6 +199,11 @@ export default async function DashboardPage() {
                             <span className="font-bold text-foreground">
                               {g.name}
                             </span>
+                            {g.created_by === user.id && (
+                              <span className="shrink-0 text-brand" title="Sei l'admin di questo gruppo">
+                                <AdminIcon className="h-5 w-5" />
+                              </span>
+                            )}
                           </div>
                           <p className="mt-1 text-sm text-text-tertiary">
                             {count} {count === 1 ? "evento" : "eventi"} organizzati
