@@ -190,12 +190,22 @@ export default async function GroupPage({
           <FilterAndListWrapper
           groupId={groupId}
           currentSort={validSort}
-          listContent={
+            listContent={
             <section>
               {!entries?.length ? (
-                <p className="rounded-2xl border border-dashed border-separator-line bg-surface p-8 text-center text-text-secondary shadow-sm">
-                  Nessun evento. Aggiungine uno con il pulsante in basso.
-                </p>
+                <div className="flex flex-col items-center p-8 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand/10 text-brand">
+                    <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-foreground">
+                    Nessun evento ancora
+                  </h3>
+                  <p className="mt-2 text-sm text-text-secondary">
+                    Aggiungine uno con il pulsante in basso.
+                  </p>
+                </div>
               ) : (
                 <ul className="space-y-3">
                   {(() => {

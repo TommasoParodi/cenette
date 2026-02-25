@@ -80,7 +80,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex-1 rounded-xl border border-separator-line bg-surface-muted py-2.5 text-sm font-medium text-foreground transition hover:bg-avatar-member-bg disabled:opacity-50"
+            className="flex-1 rounded-full border border-separator-line bg-surface-muted py-2.5 text-sm font-medium text-foreground transition hover:bg-avatar-member-bg disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -88,7 +88,7 @@ export function ConfirmDialog({
             type="button"
             onClick={handleConfirm}
             disabled={pending}
-            className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition disabled:opacity-50 ${
+            className={`flex-1 rounded-full py-2.5 text-sm font-medium transition disabled:opacity-50 ${
               destructive
                 ? "bg-red-600 text-white hover:bg-red-700"
                 : "bg-accent-strong text-accent-foreground hover:opacity-90"
