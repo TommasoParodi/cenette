@@ -405,7 +405,7 @@ export function EntryForm(props: EntryFormProps) {
           aria-label="Aggiungi foto"
           onChange={handlePhotoInputChange}
         />
-        <div className="flex justify-center gap-3">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center sm:items-stretch gap-3">
           {[0, 1, 2].map((slotIndex) => {
             const serverPhoto = serverPhotos[slotIndex];
             const previewUrl = previewUrls[slotIndex];
