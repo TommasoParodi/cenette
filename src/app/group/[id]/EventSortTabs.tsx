@@ -51,12 +51,13 @@ export function EventSortTabs({ groupId, currentSort, onSortChange }: EventSortT
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-gray-500 transition hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-full px-2 py-2 text-sm font-medium text-gray-500 transition hover:text-foreground sm:px-4"
           aria-expanded={open}
           aria-haspopup="true"
           aria-label="Ordina per"
+          title="Ordina"
         >
-          <span>Ordina</span>
+          <span className="hidden sm:inline">Ordina</span>
           <svg
             className="h-4 w-4 shrink-0"
             fill="none"
