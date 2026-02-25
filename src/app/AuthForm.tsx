@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
@@ -312,6 +313,14 @@ export function AuthForm() {
             </button>
           </>
         )}
+      </p>
+      <p className="mt-3 text-center text-xs text-text-tertiary">
+        <Link
+          href="/termini"
+          className="text-accent hover:underline focus:outline-none focus:underline"
+        >
+          Termini e Condizioni
+        </Link>
       </p>
     </div>
   );

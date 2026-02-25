@@ -126,6 +126,11 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           <p className="text-xs text-text-tertiary" aria-label="Versione app">
             Versione {packageJson.version}
           </p>
+          <p className="text-xs text-text-tertiary">
+            <Link href="/termini" className="text-accent hover:underline">
+              Termini e Condizioni
+            </Link>
+          </p>
           </section>
         </div>
       </div>
