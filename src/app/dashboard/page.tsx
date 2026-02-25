@@ -174,10 +174,10 @@ export default async function DashboardPage() {
                   Inizia a organizzare le tue cene!
                 </h3>
                 <p className="mt-2 text-center text-sm text-text-secondary">
-                  Non hai ancora gruppi. Creane uno per invitare i tuoi amici e scoprire nuovi sapori.
+                  Non hai ancora gruppi. Creane uno per invitare i tuoi amici!
                 </p>
                 <Link
-                  href="/dashboard/new"
+                  href="/dashboard/come-funziona"
                   className="mt-6 rounded-xl border-2 border-accent px-5 py-2.5 text-sm font-semibold text-accent transition hover:bg-accent/5"
                 >
                   Scopri come funziona

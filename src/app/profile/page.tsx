@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
+import { HelpIcon } from "@/components/HelpIcon";
 import { updateProfileDisplayName, uploadAvatar, removeAvatar } from "@/server-actions/profile";
 import { AvatarUpload } from "./AvatarUpload";
 import { RemoveAvatarButton } from "./RemoveAvatarButton";
@@ -79,6 +81,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           title="Profilo"
           showBack
           backHref="/dashboard"
+          right={
+            <Link
+              href="/dashboard/come-funziona"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-brand text-brand transition hover:opacity-90"
+              aria-label="Come funziona l'app"
+            >
+              <HelpIcon className="h-6 w-6" />
+            </Link>
+          }
         />
         <div className="px-6 pt-6">
           <section className="flex flex-col items-center gap-6">
