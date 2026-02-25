@@ -18,7 +18,7 @@ function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabledWhenEmpty}
-      className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-70"
+      className="flex items-center justify-center gap-3 rounded-full bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50"
     >
       {pending ? "Attendere…" : "Entra nel gruppo"}
     </button>
