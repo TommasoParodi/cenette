@@ -5,9 +5,7 @@ import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { EntryImageCarousel } from "./EntryImageCarousel";
 import { EntryPageActionsProvider } from "./EntryPageActions";
-import { EntryReviewMenu } from "./EntryReviewMenu";
-import { ReviewComment } from "./ReviewComment";
-import { ReviewPhotoLightbox } from "./ReviewPhotoLightbox";
+import { EntryReviewList } from "./EntryReviewList";
 import { EntryTopbarMenu } from "./EntryTopbarMenu";
 import { cookies } from "next/headers";
 
@@ -25,35 +23,6 @@ function formatEventDateFull(iso: string): string {
     year: "numeric",
   });
 }
-
-function formatReviewTimeAgo(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 60) return "Pochi minuti fa";
-  if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? "ora" : "ore"} fa`;
-  if (diffDays === 1) return "Ieri";
-  if (diffDays < 7) return `${diffDays} giorni fa`;
-  return formatEventDateFull(iso);
-}
-
-const RATING_CATEGORIES = [
-  { key: "rating_food", label: "CIBO" },
-  { key: "rating_service", label: "SERVIZIO" },
-  { key: "rating_cost", label: "COSTO" },
-  { key: "rating_location", label: "LOCATION" },
-] as const;
-
-/** Ordine per la card: prima colonna CIBO/COSTO, seconda SERVIZIO/LOCATION */
-const RATING_DISPLAY_ORDER = [
-  "rating_food",
-  "rating_cost",
-  "rating_service",
-  "rating_location",
-] as const;
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   const full = Math.floor(value);
@@ -324,77 +293,16 @@ export default async function EntryPage({
                   </p>
                 </div>
               ) : (
-                <ul id="recensioni" className="space-y-4">
-                  {reviewsOrdered.map((r) => {
-                    const isMine = r.user_id === user.id;
-                    const authorName =
-                      displayNameByUserId.get(r.user_id) ??
-                      participantCachedNameByUserId.get(r.user_id) ??
-                      "Utente";
-                    const authorInitials = getInitials(authorName, "?");
-                    const authorAvatarUrl = avatarUrlByUserId.get(r.user_id) ?? null;
-                    const reviewPhotoUrl = reviewPhotoUrls.get(r.id);
-
-                    return (
-                      <li key={r.id} className="rounded-2xl bg-white p-4 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex min-w-0 flex-1 items-start gap-3">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
-                              {authorAvatarUrl ? (
-                                <img src={authorAvatarUrl} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                authorInitials
-                              )}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-bold text-foreground">{authorName}</p>
-                              <p className="text-sm text-text-tertiary">{formatReviewTimeAgo(r.created_at)}</p>
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <span className="rounded-full bg-brand/15 px-3 py-1.5 text-lg font-bold text-brand">
-                              {(r.rating_overall ?? 0).toFixed(1)}
-                            </span>
-                            {isMine && (
-                              <EntryReviewMenu entryId={entryId} reviewId={r.id} />
-                            )}
-                          </div>
-                        </div>
-
-                        {r.comment && (
-                          <div className="mt-4">
-                            <ReviewComment text={r.comment} quoted />
-                          </div>
-                        )}
-
-                        {isDetailed && (
-                          <div className="mt-4 rounded-xl bg-neutral-50 px-3 py-2">
-                            <div className="mx-auto grid max-w-xs grid-cols-2 justify-items-center gap-x-4 gap-y-1">
-                              {RATING_DISPLAY_ORDER.map((key) => {
-                                const label = RATING_CATEGORIES.find((c) => c.key === key)?.label ?? key;
-                                const value = (r as Record<string, number | null>)[key] ?? 0;
-                                return (
-                                  <div key={key} className="text-center">
-                                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                                      {label}
-                                    </span>
-                                    <p className="text-lg font-bold text-brand">{value}</p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {reviewPhotoUrl && (
-                          <div className="mt-4">
-                            <ReviewPhotoLightbox src={reviewPhotoUrl} alt="Foto recensione" />
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+                <EntryReviewList
+                  entryId={entryId}
+                  isDetailed={isDetailed}
+                  reviewsOrdered={reviewsOrdered}
+                  userId={user.id}
+                  displayNameByUserId={Object.fromEntries(displayNameByUserId)}
+                  participantCachedNameByUserId={Object.fromEntries(participantCachedNameByUserId)}
+                  avatarUrlByUserId={Object.fromEntries(avatarUrlByUserId)}
+                  reviewPhotoUrls={Object.fromEntries(reviewPhotoUrls)}
+                />
               )}
             </section>
           </div>

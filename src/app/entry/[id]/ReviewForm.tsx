@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useEffect, type ReactElement } from "react";
+import { useActionState, useRef, useState, useEffect, startTransition, type ReactElement } from "react";
 import { useFormStatus } from "react-dom";
 import { createOrUpdateReview } from "@/server-actions/entries";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -114,7 +114,8 @@ function ReviewFormContent({
   initialRatingLocation,
   initialPhotoUrl,
   state,
-}: Props & { state: string | null }) {
+  selectedPhotoRef,
+}: Props & { state: string | null; selectedPhotoRef: React.MutableRefObject<File | null> }) {
   const { pending } = useFormStatus();
   const isEdit = initialRating != null;
   const isDetailed = voteMode === "DETAILED";
@@ -123,6 +124,12 @@ function ReviewFormContent({
   const removePhotoCheckboxRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Tieni in sync la ref per l’invio: dopo un submit fallito il browser resetta l’input file,
+  // quindi al prossimo submit usiamo il file da qui così la foto non si perde
+  useEffect(() => {
+    selectedPhotoRef.current = selectedFile;
+  }, [selectedFile, selectedPhotoRef]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeInitialPhoto, setRemoveInitialPhoto] = useState(false);
 
@@ -345,10 +352,24 @@ export function ReviewForm(props: Props) {
     },
     null as string | null
   );
+  const selectedPhotoRef = useRef<File | null>(null);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    // Dopo un submit fallito (es. voto mancante) il browser resetta l’input file:
+    // re-inseriamo la foto dalla ref così al secondo invio viene pubblicata
+    const file = selectedPhotoRef.current;
+    if (file) formData.set("photo", file);
+    startTransition(() => {
+      formAction(formData);
+    });
+  }
 
   return (
-    <form action={formAction} className="relative flex flex-col pb-8">
-      <ReviewFormContent {...props} state={state} />
+    <form action={formAction} onSubmit={handleSubmit} className="relative flex flex-col pb-8">
+      <ReviewFormContent {...props} state={state} selectedPhotoRef={selectedPhotoRef} />
     </form>
   );
 }

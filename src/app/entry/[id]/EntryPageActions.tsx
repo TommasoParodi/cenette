@@ -33,7 +33,8 @@ export function EntryPageActionsProvider({
         const result = await deleteReviewAction(reviewId, entryId);
         if (result?.data) {
           router.refresh();
-          await new Promise((r) => setTimeout(r, 400));
+          // Attendi che il refresh abbia tempo di completare prima di nascondere il loading
+          await new Promise((r) => setTimeout(r, 1200));
         } else if (result?.error) {
           alert(result.error);
         }
