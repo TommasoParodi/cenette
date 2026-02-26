@@ -124,7 +124,7 @@ export function EntryReviewList({
                 <div className="mx-auto grid max-w-xs grid-cols-2 justify-items-center gap-x-4 gap-y-1">
                   {RATING_DISPLAY_ORDER.map((key) => {
                     const label = RATING_CATEGORIES.find((c) => c.key === key)?.label ?? key;
-                    const value = (r as Record<string, number | null>)[key] ?? 0;
+                    const value = (r as unknown as Record<string, number | null>)[key] ?? 0;
                     return (
                       <div key={key} className="text-center">
                         <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
