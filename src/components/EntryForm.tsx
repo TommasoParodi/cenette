@@ -6,7 +6,6 @@ import {
   createEntry,
   deleteEntryPhoto,
   updateEntry,
-  uploadEntryPhotos,
 } from "@/server-actions/entries";
 import { compressPhotoFiles } from "@/lib/compress-photos";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -88,7 +87,6 @@ export function EntryForm(props: EntryFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [photoAddError, setPhotoAddError] = useState<string | null>(null);
   const [photoAddPending, setPhotoAddPending] = useState(false);
-  const [uploadingPreviewUrl, setUploadingPreviewUrl] = useState<string | null>(null);
   const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle ?? "");
@@ -100,15 +98,25 @@ export function EntryForm(props: EntryFormProps) {
 
   const totalPhotoCount = isCreate
     ? pendingPhotos.length
-    : serverPhotos.length + (uploadingPreviewUrl ? 1 : 0);
+    : serverPhotos.length + pendingPhotos.length;
   const canAddMorePhotos = totalPhotoCount < MAX_PHOTOS;
 
   useEffect(() => {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
-      if (uploadingPreviewUrl) URL.revokeObjectURL(uploadingPreviewUrl);
     };
-  }, [previewUrls, uploadingPreviewUrl]);
+  }, [previewUrls]);
+
+  // Dopo il refresh la foto rimossa non è più in serverPhotos: resetta lo stato
+  useEffect(() => {
+    if (
+      removingPhotoId &&
+      !isCreate &&
+      !serverPhotos.some((p) => p.id === removingPhotoId)
+    ) {
+      setRemovingPhotoId(null);
+    }
+  }, [removingPhotoId, isCreate, serverPhotos]);
 
   async function handleAddPhotos(filesFromInput?: FileList | null) {
     const input = photoInputRef.current;
@@ -119,60 +127,40 @@ export function EntryForm(props: EntryFormProps) {
     }
     setPhotoAddError(null);
     const raw = rawFiles.slice(0, 1);
-    const currentCount = isCreate ? pendingPhotos.length : serverPhotos.length + (uploadingPreviewUrl ? 1 : 0);
+    const currentCount = isCreate ? pendingPhotos.length : serverPhotos.length + pendingPhotos.length;
     const remaining = Math.max(0, MAX_PHOTOS - currentCount);
     if (remaining === 0 || raw.length === 0) {
       if (remaining === 0) setPhotoAddError("Puoi aggiungere al massimo 3 foto.");
       return;
     }
-    if (isCreate) {
-      const instantUrl = URL.createObjectURL(raw[0]);
-      setPreviewUrls((prev) => [...prev, instantUrl].slice(0, MAX_PHOTOS));
-      setPendingPhotos((prev) => [...prev, raw[0]].slice(0, MAX_PHOTOS));
-      if (input) input.value = "";
-      setPhotoAddPending(true);
-      try {
-        const compressed = await compressPhotoFiles(raw);
-        const newUrl = URL.createObjectURL(compressed[0]);
-        setPreviewUrls((prev) => {
-          const next = [...prev];
-          if (next.length > 0) URL.revokeObjectURL(next[next.length - 1]!);
-          next[next.length - 1] = newUrl;
-          return next;
-        });
-        setPendingPhotos((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = compressed[0];
-          return next;
-        });
-      } catch {
-        setPhotoAddError("Errore durante la compressione.");
-        setPendingPhotos((prev) => prev.slice(0, -1));
-        setPreviewUrls((prev) => {
-          const next = prev.slice(0, -1);
-          URL.revokeObjectURL(instantUrl);
-          return next;
-        });
-      }
-      setPhotoAddPending(false);
-      return;
-    }
     const instantUrl = URL.createObjectURL(raw[0]);
-    setUploadingPreviewUrl(instantUrl);
-    setPhotoAddPending(true);
+    setPreviewUrls((prev) => [...prev, instantUrl].slice(0, MAX_PHOTOS));
+    setPendingPhotos((prev) => [...prev, raw[0]].slice(0, MAX_PHOTOS));
     if (input) input.value = "";
+    setPhotoAddPending(true);
     try {
       const compressed = await compressPhotoFiles(raw);
-      const formData = new FormData();
-      formData.append("photos", compressed[0]);
-      const result = await uploadEntryPhotos(entryId!, formData);
-      if (result?.error) setPhotoAddError(result.error);
-      else if (result?.success) router.refresh();
+      const newUrl = URL.createObjectURL(compressed[0]);
+      setPreviewUrls((prev) => {
+        const next = [...prev];
+        if (next.length > 0) URL.revokeObjectURL(next[next.length - 1]!);
+        next[next.length - 1] = newUrl;
+        return next;
+      });
+      setPendingPhotos((prev) => {
+        const next = [...prev];
+        next[next.length - 1] = compressed[0];
+        return next;
+      });
     } catch {
-      setPhotoAddError("Errore di caricamento.");
+      setPhotoAddError("Errore durante la compressione.");
+      setPendingPhotos((prev) => prev.slice(0, -1));
+      setPreviewUrls((prev) => {
+        const next = prev.slice(0, -1);
+        URL.revokeObjectURL(instantUrl);
+        return next;
+      });
     }
-    setUploadingPreviewUrl(null);
-    URL.revokeObjectURL(instantUrl);
     setPhotoAddPending(false);
   }
 
@@ -197,6 +185,7 @@ export function EntryForm(props: EntryFormProps) {
     try {
       await deleteEntryPhoto(formData);
       router.refresh();
+      // Non resettare removingPhotoId: lo spinner resta fino al refresh che aggiorna serverPhotos
     } catch (e) {
       if (
         typeof (e as { digest?: string })?.digest === "string" &&
@@ -205,7 +194,6 @@ export function EntryForm(props: EntryFormProps) {
         return;
       }
       setError("Errore durante la rimozione della foto.");
-    } finally {
       setRemovingPhotoId(null);
     }
   }
@@ -229,6 +217,9 @@ export function EntryForm(props: EntryFormProps) {
       setPending(false);
       if (result?.error) setError(result.error);
     } else if (!isCreate && entryId) {
+      for (const file of pendingPhotos) {
+        newFormData.append("photos", file);
+      }
       const result = await updateEntry(entryId, newFormData);
       setPending(false);
       if (result?.error) setError(result.error);
@@ -408,23 +399,11 @@ export function EntryForm(props: EntryFormProps) {
         <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center sm:items-stretch gap-3">
           {[0, 1, 2].map((slotIndex) => {
             const serverPhoto = serverPhotos[slotIndex];
-            const previewUrl = previewUrls[slotIndex];
+            const pendingIndex = isCreate ? slotIndex : slotIndex - serverPhotos.length;
+            const previewUrl = pendingIndex >= 0 ? previewUrls[pendingIndex] : undefined;
             const hasPhoto = !!serverPhoto || previewUrl !== undefined;
             const isAddSlot = canAddMorePhotos && slotIndex === totalPhotoCount;
 
-            if (!isCreate && slotIndex === serverPhotos.length && uploadingPreviewUrl) {
-              return (
-                <div key="uploading" className="relative aspect-square w-full max-w-[120px] shrink-0 rounded-xl border-2 border-dashed border-[var(--input-border)] bg-[var(--input-bg)]">
-                  <div className="absolute inset-0 overflow-hidden rounded-xl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={uploadingPreviewUrl} alt="" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30">
-                    <LoadingSpinner className="h-8 w-8 border-2 border-white/40 border-t-white" />
-                  </div>
-                </div>
-              );
-            }
             if (isAddSlot) {
               return (
                 <button
@@ -475,7 +454,7 @@ export function EntryForm(props: EntryFormProps) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleRemovePendingPhoto(slotIndex)}
+                    onClick={() => handleRemovePendingPhoto(pendingIndex)}
                     className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-white shadow"
                     aria-label="Rimuovi foto"
                   >
