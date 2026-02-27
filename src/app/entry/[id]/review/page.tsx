@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getReviewPhotoPublicUrl } from "@/lib/storage-public-url";
 import { Topbar } from "@/components/Topbar";
 import { ReviewForm } from "../ReviewForm";
 
@@ -64,13 +65,9 @@ export default async function EntryReviewPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  let myReviewPhotoUrl: string | null = null;
-  if (myReview?.photo_path) {
-    const { data: signed } = await supabase.storage
-      .from("review-photos")
-      .createSignedUrl(myReview.photo_path, 3600);
-    if (signed?.signedUrl) myReviewPhotoUrl = signed.signedUrl;
-  }
+  const myReviewPhotoUrl = myReview?.photo_path
+    ? getReviewPhotoPublicUrl(myReview.photo_path)
+    : null;
 
   const isEdit = !!myReview;
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
+import { getEntryPhotoPublicUrl } from "@/lib/storage-public-url";
 import { Topbar } from "@/components/Topbar";
 import { type EventFilter } from "./EventFilterTabs";
 import { FilterAndListWrapper } from "./FilterAndListWrapper";
@@ -148,12 +149,9 @@ export default async function GroupPage({
     photos?.forEach((p) => {
       if (!firstPathByEntry[p.entry_id]) firstPathByEntry[p.entry_id] = p.storage_path;
     });
-    const bucket = "entry-photos";
     for (const entryId of Object.keys(firstPathByEntry)) {
-      const { data: signed } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(firstPathByEntry[entryId], 3600);
-      if (signed?.signedUrl) firstPhotoUrlByEntry[entryId] = signed.signedUrl;
+      const url = getEntryPhotoPublicUrl(firstPathByEntry[entryId]);
+      if (url) firstPhotoUrlByEntry[entryId] = url;
     }
   }
 

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
+import { getEntryPhotoPublicUrl } from "@/lib/storage-public-url";
 import { EntryFormPageLayout } from "@/components/EntryFormPageLayout";
 import { EntryForm } from "@/components/EntryForm";
 
@@ -87,12 +88,9 @@ export default async function EntryEditPage({
 
   const currentPhotos: { id: string; url: string }[] = [];
   if (entryPhotos?.length) {
-    const bucket = "entry-photos";
     for (const p of entryPhotos) {
-      const { data: signed } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(p.storage_path, 3600);
-      if (signed?.signedUrl) currentPhotos.push({ id: p.id, url: signed.signedUrl });
+      const url = getEntryPhotoPublicUrl(p.storage_path);
+      if (url) currentPhotos.push({ id: p.id, url });
     }
   }
 

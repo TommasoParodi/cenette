@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
+import { getEntryPhotoPublicUrl, getReviewPhotoPublicUrl } from "@/lib/storage-public-url";
 import { Topbar } from "@/components/Topbar";
 import { EntryImageCarousel } from "./EntryImageCarousel";
 import { EntryPageActionsProvider } from "./EntryPageActions";
@@ -105,11 +106,9 @@ export default async function EntryPage({
 
   const photoUrls: { id: string; url: string }[] = [];
   if (entryPhotos?.length) {
-    const bucket = "entry-photos";
-    const expiresIn = 3600;
     for (const p of entryPhotos) {
-      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(p.storage_path, expiresIn);
-      if (signed?.signedUrl) photoUrls.push({ id: p.id, url: signed.signedUrl });
+      const url = getEntryPhotoPublicUrl(p.storage_path);
+      if (url) photoUrls.push({ id: p.id, url });
     }
   }
 
@@ -146,14 +145,10 @@ export default async function EntryPage({
   const reviewsOrdered = myReview ? [myReview, ...otherReviews] : otherReviews;
 
   const reviewPhotoUrls = new Map<string, string>();
-  const reviewPhotosWithPath = (reviews ?? []).filter((r) => r.photo_path);
-  if (reviewPhotosWithPath.length > 0) {
-    const bucket = "review-photos";
-    const expiresIn = 3600;
-    for (const r of reviewPhotosWithPath) {
-      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(r.photo_path!, expiresIn);
-      if (signed?.signedUrl) reviewPhotoUrls.set(r.id, signed.signedUrl);
-    }
+  for (const r of reviews ?? []) {
+    if (!r.photo_path) continue;
+    const url = getReviewPhotoPublicUrl(r.photo_path);
+    if (url) reviewPhotoUrls.set(r.id, url);
   }
 
   const avgRating =
