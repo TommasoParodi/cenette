@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cenette",
     description:
-      "Crea eventi a tavola con amici e famiglia e scrivi recensioni per ogni cena: il ricordo delle serate più belle resta con te.",
+      "Crea eventi a tavola con famiglia e amici e scrivi recensioni per ogni cena: il ricordo delle serate più belle resta con te.",
     images: ["/images/illustrazione-2.jpeg"],
   },
   icons: {

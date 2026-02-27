@@ -8,7 +8,6 @@ import {
   updateEntry,
 } from "@/server-actions/entries";
 import { compressPhotoFiles } from "@/lib/compress-photos";
-import { AvatarImage } from "@/components/AvatarImage";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName, inputDropzoneClassName } from "@/components/ui/inputBaseStyles";
@@ -378,9 +377,11 @@ export function EntryForm(props: EntryFormProps) {
                     className="peer sr-only"
                   />
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-xs font-medium">
-                    <AvatarImage src={avatarUrl}>
-                      {initials}
-                    </AvatarImage>
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      initials
+                    )}
                   </span>
                   {m.displayName}
                 </label>
