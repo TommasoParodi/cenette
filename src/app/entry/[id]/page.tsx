@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAvatarPublicUrl } from "@/lib/avatar";
 import { getEntryPhotoPublicUrl, getReviewPhotoPublicUrl } from "@/lib/storage-public-url";
 import { Topbar } from "@/components/Topbar";
+import { AdminIcon } from "@/components/AdminIcon";
 import { EntryImageCarousel } from "./EntryImageCarousel";
 import { EntryPageActionsProvider } from "./EntryPageActions";
 import { EntryReviewList } from "./EntryReviewList";
@@ -244,18 +245,36 @@ export default async function EntryPage({
                   </span>
                 </div>
                 <div className="flex items-center">
-                  {participantsWithNames.slice(0, 5).map((p, i) => (
-                    <span
-                      key={p.id}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-sm font-medium text-foreground first:ml-0 -ml-2.5"
-                    >
-                      {p.avatarUrl ? (
-                        <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        p.initials
-                      )}
-                    </span>
-                  ))}
+                  {participantsWithNames.slice(0, 5).map((p, i) => {
+                    const isCreator = entry.created_by === p.id;
+                    const isMeCreator = isCreator && p.id === user.id;
+                    const title = isCreator ? (isMeCreator ? "Sei il creatore dell'evento" : "Creatore dell'evento") : undefined;
+                    const avatar = (
+                      <span
+                        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-sm font-medium text-foreground first:ml-0 -ml-2.5"
+                        title={title}
+                      >
+                        {p.avatarUrl ? (
+                          <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          p.initials
+                        )}
+                      </span>
+                    );
+                    return isCreator ? (
+                      <span key={p.id} className="relative z-10">
+                        {avatar}
+                        <span
+                          className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-brand text-accent-foreground"
+                          aria-hidden
+                        >
+                          <AdminIcon className="h-3 w-3" />
+                        </span>
+                      </span>
+                    ) : (
+                      <span key={p.id}>{avatar}</span>
+                    );
+                  })}
                   {participantsWithNames.length > 5 && (
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-accent -ml-2.5 text-xs font-semibold text-accent-foreground">
                       +{participantsWithNames.length - 5}
@@ -311,10 +330,10 @@ export default async function EntryPage({
               aria-label="Aggiungi recensione"
             >
               <span className="text-xl leading-none" aria-hidden>+</span>
-              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              Aggiungi recensione
+              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              Aggiungi recensione
             </Link>
           </div>
         )}

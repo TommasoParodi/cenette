@@ -254,8 +254,8 @@ export default async function DashboardPage() {
           aria-label="Crea nuovo gruppo"
         >
           <span className="text-xl leading-none" aria-hidden>+</span>
-          <PeoplePlusIcon className="h-5 w-5" />
           Nuovo gruppo
+          <PeoplePlusIcon className="h-5 w-5 shrink-0" />
         </Link>
       </div>
     </main>

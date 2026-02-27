@@ -297,15 +297,12 @@ export default async function GroupPage({
                           <div className="flex items-center">
                             {participantList.slice(0, 3).map((part, i) => {
                               const isCreator = creatorId != null && part.userId === creatorId;
-                              return (
+                              const isMeCreator = isCreator && part.userId === user.id;
+                              const title = isCreator ? (isMeCreator ? "Sei il creatore dell'evento" : "Creatore dell'evento") : undefined;
+                              const avatar = (
                                 <span
-                                  key={`${e.id}-${i}-${part.userId}`}
-                                  className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface text-xs font-medium first:ml-0 -ml-2 ${
-                                    isCreator
-                                      ? "bg-amber-400/90 text-amber-950 z-10"
-                                      : "bg-avatar-member-bg text-brand"
-                                  }`}
-                                  title={isCreator ? "Creatore dell'evento" : undefined}
+                                  className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-xs font-medium text-foreground first:ml-0 -ml-2"
+                                  title={title}
                                 >
                                   {part.avatarUrl ? (
                                     <img src={part.avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -313,6 +310,19 @@ export default async function GroupPage({
                                     part.initials
                                   )}
                                 </span>
+                              );
+                              return isCreator ? (
+                                <span key={`${e.id}-${i}-${part.userId}`} className="relative z-10">
+                                  {avatar}
+                                  <span
+                                    className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-surface bg-brand text-accent-foreground"
+                                    aria-hidden
+                                  >
+                                    <AdminIcon className="h-2.5 w-2.5" />
+                                  </span>
+                                </span>
+                              ) : (
+                                <span key={`${e.id}-${i}-${part.userId}`}>{avatar}</span>
                               );
                             })}
                             {extraCount > 0 && (
@@ -355,10 +365,10 @@ export default async function GroupPage({
           aria-label="Aggiungi evento"
         >
           <span className="text-xl leading-none" aria-hidden>+</span>
+          Aggiungi evento
           <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          Aggiungi evento
         </Link>
       </div>
     </main>
