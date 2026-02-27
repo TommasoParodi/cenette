@@ -19,9 +19,31 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://cenette.vercel.app"),
   title: "Cenette",
   applicationName: "Cenette",
-  description: "Ricorda le cene più belle",
+  description:
+    "Crea eventi a tavola con amici e famiglia e scrivi recensioni per ogni cena: il ricordo delle serate più belle resta con te.",
+  openGraph: {
+    title: "Cenette",
+    description:
+      "Crea eventi a tavola con amici e famiglia e scrivi recensioni per ogni cena: il ricordo delle serate più belle resta con te.",
+    images: [
+      {
+        url: "/images/illustrazione-2.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "Cenette - Cena in compagnia",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cenette",
+    description:
+      "Crea eventi a tavola con amici e famiglia e scrivi recensioni per ogni cena: il ricordo delle serate più belle resta con te.",
+    images: ["/images/illustrazione-2.jpeg"],
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
