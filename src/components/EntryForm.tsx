@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName, inputDropzoneClassName } from "@/components/ui/inputBaseStyles";
 
-export type EntryFormMember = { id: string; displayName: string };
+export type EntryFormMember = { id: string; displayName: string; avatarUrl?: string | null };
 export type EntryFormPhotoItem = { id: string; url: string };
 
 type CreateProps = {
@@ -359,6 +359,7 @@ export function EntryForm(props: EntryFormProps) {
             const isCreator = m.id === creatorId;
             const defaultChecked = isCreate ? isCreator : (defaultParticipantIds?.includes(m.id) ?? false) || isCreator;
             const initials = getInitials(m.displayName);
+            const avatarUrl = m.avatarUrl ?? null;
             return (
               <li key={m.id}>
                 <label
@@ -375,7 +376,13 @@ export function EntryForm(props: EntryFormProps) {
                     disabled={isCreator}
                     className="peer sr-only"
                   />
-                  <span className="font-medium">{initials}</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-xs font-medium">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </span>
                   {m.displayName}
                 </label>
               </li>

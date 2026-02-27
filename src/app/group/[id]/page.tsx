@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { type EventFilter } from "./EventFilterTabs";
 import { FilterAndListWrapper } from "./FilterAndListWrapper";
@@ -89,7 +90,7 @@ export default async function GroupPage({
 
   const entryIds = entriesList.map((e) => e.id);
   const ratingByEntry: Record<string, number> = {};
-  const participantsByEntry: Record<string, { initials: string; userId: string }[]> = {};
+  const participantsByEntry: Record<string, { initials: string; userId: string; avatarUrl: string | null }[]> = {};
   const firstPhotoUrlByEntry: Record<string, string> = {};
 
   if (entryIds.length > 0) {
@@ -114,16 +115,28 @@ export default async function GroupPage({
       .select("entry_id, user_id, cached_display_name")
       .in("entry_id", entryIds);
     const userIds = [...new Set((participants ?? []).map((p) => p.user_id))];
+    type ProfileRow = { id: string; display_name: string | null; avatar_url: string | null; avatar_updated_at?: string | null };
     const { data: profiles } =
       userIds.length > 0
-        ? await supabase.from("profiles").select("id, display_name").in("id", userIds)
-        : { data: null };
+        ? await supabase.from("profiles").select("id, display_name, avatar_url, avatar_updated_at").in("id", userIds)
+        : { data: null as ProfileRow[] | null };
     const nameByUserId = new Map<string, string>();
-    profiles?.forEach((p) => nameByUserId.set(p.id, p.display_name ?? "?"));
+    const avatarUrlByUserId = new Map<string, string | null>();
+    profiles?.forEach((p) => {
+      nameByUserId.set(p.id, p.display_name ?? "?");
+      avatarUrlByUserId.set(
+        p.id,
+        getAvatarPublicUrl(p.avatar_url ?? null, p.avatar_updated_at ?? null)
+      );
+    });
     participants?.forEach((p) => {
       if (!participantsByEntry[p.entry_id]) participantsByEntry[p.entry_id] = [];
       const name = (p as { cached_display_name?: string | null }).cached_display_name ?? nameByUserId.get(p.user_id) ?? "?";
-      participantsByEntry[p.entry_id].push({ initials: getInitials(name, "?"), userId: p.user_id });
+      participantsByEntry[p.entry_id].push({
+        initials: getInitials(name, "?"),
+        userId: p.user_id,
+        avatarUrl: avatarUrlByUserId.get(p.user_id) ?? null,
+      });
     });
 
     const { data: photos } = await supabase
@@ -186,7 +199,7 @@ export default async function GroupPage({
           }
         />
 
-        <div className="px-6 pt-6">
+        <div className="px-6 pt-3">
           <FilterAndListWrapper
           groupId={groupId}
           currentSort={validSort}
@@ -289,14 +302,18 @@ export default async function GroupPage({
                               return (
                                 <span
                                   key={`${e.id}-${i}-${part.userId}`}
-                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface text-xs font-medium first:ml-0 -ml-2 ${
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface text-xs font-medium first:ml-0 -ml-2 ${
                                     isCreator
                                       ? "bg-amber-400/90 text-amber-950 z-10"
                                       : "bg-avatar-member-bg text-brand"
                                   }`}
                                   title={isCreator ? "Creatore dell'evento" : undefined}
                                 >
-                                  {part.initials}
+                                  {part.avatarUrl ? (
+                                    <img src={part.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    part.initials
+                                  )}
                                 </span>
                               );
                             })}

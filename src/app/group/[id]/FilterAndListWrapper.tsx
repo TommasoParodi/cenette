@@ -31,7 +31,7 @@ export function FilterAndListWrapper({ groupId, currentSort, listContent }: Filt
 
   return (
     <>
-      <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-0 mb-4 flex flex-wrap items-center justify-between gap-3">
         <EventFilterTabs groupId={groupId} onFilterChange={onFilterChange} />
         <EventSortTabs groupId={groupId} currentSort={currentSort} onSortChange={onSortChange} />
       </div>

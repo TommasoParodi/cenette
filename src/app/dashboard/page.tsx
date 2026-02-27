@@ -108,12 +108,21 @@ export default async function DashboardPage() {
   const membersByGroup: Record<string, MemberInfo[]> = {};
   if (groups.length > 0) {
     const { data: rpcRows } = await supabase.rpc("get_my_groups_members");
-    const rows = (rpcRows ?? []) as Array<{ group_id: string; display_name: string | null }>;
+    const rows = (rpcRows ?? []) as Array<{
+      group_id: string;
+      user_id: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      avatar_updated_at: string | null;
+    }>;
     rows.forEach((r) => {
       if (!membersByGroup[r.group_id]) membersByGroup[r.group_id] = [];
       membersByGroup[r.group_id].push({
         initials: getInitials(r.display_name, "?"),
-        avatarUrl: null,
+        avatarUrl: getAvatarPublicUrl(
+          r.avatar_url ?? null,
+          r.avatar_updated_at ?? avatarRefreshCookie ?? null
+        ),
       });
     });
   }
@@ -159,7 +168,7 @@ export default async function DashboardPage() {
                 I tuoi gruppi
               </h2>
               {groups.length > 0 && (
-                <span className="rounded-full bg-surface-muted px-3 py-1 text-sm font-medium text-text-muted">
+                <span className="rounded-full bg-tabs-track px-3 py-1 text-sm font-medium text-tabs-track-inactive">
                   {groups.length} Attiv{groups.length === 1 ? "o" : "i"}
                 </span>
               )}

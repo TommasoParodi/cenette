@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAvatarPublicUrl } from "@/lib/avatar";
 import { EntryFormPageLayout } from "@/components/EntryFormPageLayout";
 import { EntryForm } from "@/components/EntryForm";
 
@@ -41,16 +42,24 @@ export default async function NewEntryPage({
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("user_id, profiles(id, display_name)")
+    .select("user_id, profiles(id, display_name, avatar_url, avatar_updated_at)")
     .eq("group_id", groupId);
 
   const membersWithProfile = (members ?? []).map((m) => {
     const raw = m.profiles as unknown;
     const profile = Array.isArray(raw) ? raw[0] : raw;
-    const p = profile as { id: string; display_name: string | null } | null | undefined;
+    const p = profile as {
+      id: string;
+      display_name: string | null;
+      avatar_url: string | null;
+      avatar_updated_at?: string | null;
+    } | null | undefined;
     return {
       id: m.user_id,
       displayName: p?.display_name ?? "Utente",
+      avatarUrl: p
+        ? getAvatarPublicUrl(p.avatar_url ?? null, p.avatar_updated_at ?? null)
+        : null,
     };
   });
 
