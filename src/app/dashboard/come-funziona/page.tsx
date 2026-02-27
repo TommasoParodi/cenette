@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/Topbar";
+import { CenetteLogo } from "@/components/CenetteLogo";
 
 export default async function ComeFunzionaPage() {
   const supabase = await createSupabaseServerClient();
@@ -18,6 +19,15 @@ export default async function ComeFunzionaPage() {
           title="Come funziona"
         />
         <div className="px-4 py-6 space-y-10">
+          <section>
+            <h2 className="text-xl font-semibold tracking-tight text-brand flex justify-center">
+              <CenetteLogo href="/dashboard" />
+            </h2>
+            <p className="mt-2 text-sm text-text-secondary">
+              Cenette è l&apos;app per organizzare cene con amici e familiari: crea gruppi, proponi eventi e conserva le recensioni delle serate. Qui sotto trovi come funzionano gruppi, eventi e recensioni.
+            </p>
+          </section>
+
           <section>
             <h2 className="text-xl font-semibold tracking-tight text-brand">
               Gruppi
