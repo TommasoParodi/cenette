@@ -2,9 +2,9 @@
 
 /* Tema Cenette - colori base e lista gruppi */
 :root {
-  /* Sfondo app (livello globale) - beige tenue */
-  --background: #F8F4EE;
-  --background-primary: #F8F4EE;
+  /* Sfondo app (livello globale) - beige chiaro più vivido */
+  --background: #F2E9DC;
+  --background-primary: #F2E9DC;
   /* Brand / logo Cenette, pulsante Accedi, link */
   --brand: #FFA740;
   /* Variante brand header lista */
@@ -13,16 +13,20 @@
   --text-secondary: #4A4A4A;
   /* Testo terziario (slogan, "OPPURE") */
   --text-tertiary: #888888;
-  /* Card e input */
-  --surface: #FFFFFF;
+  /* Card e input - bianco caldo */
+  --surface: #FDFBF7;
   /* Testo pulsante Google e etichette */
   --text-muted: #4A4A4A;
   --label: #4A4A4A;
+  /* Track tab (pill) - beige-grigio caldo */
+  --tabs-track: #E8DFD4;
+  /* Testo tab non attiva */
+  --tabs-track-inactive: #7A7268;
   /* Separatori e bordi input */
   --separator-text: #888888;
   --separator-line: #CCCCCC;
-  /* Superficie muted (pulsante Google) */
-  --surface-muted: #EEEEEE;
+  /* Superficie muted (pulsante Google) - grigio-beige tenue */
+  --surface-muted: #E8E4DE;
   /* Placeholder e bordi */
   --placeholder: #BBBBBB;
   /* Accent: pulsante primario, link Registrati/Dimenticata */
@@ -57,6 +61,8 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-surface: var(--surface);
+  --color-tabs-track: var(--tabs-track);
+  --color-tabs-track-inactive: var(--tabs-track-inactive);
   --color-text-muted: var(--text-muted);
   --color-label: var(--label);
   --color-separator-text: var(--separator-text);

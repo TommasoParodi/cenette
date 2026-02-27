@@ -29,7 +29,7 @@ export function NewGroupSection() {
     <div className="mt-6 flex flex-col gap-4">
       <div className="flex justify-center">
         <div
-          className="inline-flex rounded-full bg-gray-200 p-1.5"
+          className="inline-flex rounded-full bg-tabs-track p-1.5"
           role="tablist"
           aria-label="Nuovo gruppo o entra con codice"
         >
@@ -47,7 +47,7 @@ export function NewGroupSection() {
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   isActive
                     ? "bg-white text-brand shadow-sm"
-                    : "text-gray-500 hover:text-foreground"
+                    : "text-tabs-track-inactive hover:text-foreground"
                 }`}
               >
                 {label}

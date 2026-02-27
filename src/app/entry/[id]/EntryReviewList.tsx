@@ -88,7 +88,7 @@ export function EntryReviewList({
         const reviewPhotoUrl = reviewPhotoUrls[r.id];
 
         return (
-          <li key={r.id} className="rounded-2xl bg-white p-4 shadow-sm">
+          <li key={r.id} className="rounded-2xl bg-surface p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
@@ -127,7 +127,7 @@ export function EntryReviewList({
                     const value = (r as unknown as Record<string, number | null>)[key] ?? 0;
                     return (
                       <div key={key} className="text-center">
-                        <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <span className="text-xs font-medium uppercase tracking-wide text-tabs-track-inactive">
                           {label}
                         </span>
                         <p className="text-lg font-bold text-brand">{value}</p>

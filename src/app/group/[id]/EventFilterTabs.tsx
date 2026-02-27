@@ -35,14 +35,14 @@ export function EventFilterTabs({ groupId, onFilterChange }: EventFilterTabsProp
   };
 
   return (
-    <div className="inline-flex rounded-full bg-gray-200 p-1.5">
+    <div className="inline-flex rounded-full bg-tabs-track p-1.5">
       {FILTERS.map(({ value, label }) => {
         const isActive = current === value;
         const href = buildHref(value);
         const className = `rounded-full px-4 py-2 text-sm font-medium transition ${
           isActive
             ? "bg-white text-brand shadow-sm"
-            : "text-gray-500 hover:text-foreground"
+            : "text-tabs-track-inactive hover:text-foreground"
         }`;
         if (onFilterChange) {
           return (
