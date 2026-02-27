@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
@@ -19,6 +19,9 @@ function AvatarUploadLabel({
   initials: string;
 }) {
   const { pending } = useFormStatus();
+  const [imgError, setImgError] = useState(false);
+
+  const showImage = !!avatarSignedUrl && !imgError;
 
   return (
     <div className="relative h-24 w-24">
@@ -27,7 +30,7 @@ function AvatarUploadLabel({
         className="flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-separator-line bg-avatar-user-bg transition hover:opacity-90 focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2"
         title="Clicca per cambiare immagine"
       >
-        {avatarSignedUrl ? (
+        {showImage ? (
           <Image
             src={avatarSignedUrl}
             alt=""
@@ -36,6 +39,7 @@ function AvatarUploadLabel({
             className="h-full w-full object-cover"
             unoptimized
             priority
+            onError={() => setImgError(true)}
           />
         ) : (
           <span className="text-2xl font-medium text-foreground" aria-hidden>

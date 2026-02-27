@@ -5,6 +5,7 @@ import { getAvatarPublicUrl } from "@/lib/avatar";
 import { getEntryPhotoPublicUrl, getReviewPhotoPublicUrl } from "@/lib/storage-public-url";
 import { Topbar } from "@/components/Topbar";
 import { AdminIcon } from "@/components/AdminIcon";
+import { AvatarImage } from "@/components/AvatarImage";
 import { EntryImageCarousel } from "./EntryImageCarousel";
 import { EntryPageActionsProvider } from "./EntryPageActions";
 import { EntryReviewList } from "./EntryReviewList";
@@ -244,11 +245,9 @@ export default async function EntryPage({
                         className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-sm font-medium text-foreground first:ml-0 -ml-2.5"
                         title={title}
                       >
-                        {p.avatarUrl ? (
-                          <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          p.initials
-                        )}
+                        <AvatarImage src={p.avatarUrl}>
+                          {p.initials}
+                        </AvatarImage>
                       </span>
                     );
                     return isCreator ? (

@@ -6,6 +6,7 @@ import { getAvatarPublicUrl } from "@/lib/avatar";
 import { Topbar } from "@/components/Topbar";
 import { CenetteLogo } from "@/components/CenetteLogo";
 import { AdminIcon } from "@/components/AdminIcon";
+import { AvatarImage } from "@/components/AvatarImage";
 
 function getInitials(name: string | null | undefined, fallback: string): string {
   if (!name || !name.trim()) return fallback.slice(0, 2).toUpperCase();
@@ -146,17 +147,9 @@ export default async function DashboardPage() {
               title={profile?.display_name ?? user.email ?? "Profilo"}
               aria-label="Apri profilo"
             >
-              {avatarPublicUrl ? (
-                <img
-                  src={avatarPublicUrl}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                userInitials
-              )}
+              <AvatarImage src={avatarPublicUrl}>
+                {userInitials}
+              </AvatarImage>
             </Link>
           }
         />
@@ -223,11 +216,9 @@ export default async function DashboardPage() {
                                 key={`${g.id}-${i}-${mem.initials}`}
                                 className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-xs font-medium text-foreground first:ml-0 -ml-2.5"
                               >
-                                {mem.avatarUrl ? (
-                                  <img src={mem.avatarUrl} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  mem.initials
-                                )}
+                                <AvatarImage src={mem.avatarUrl}>
+                                  {mem.initials}
+                                </AvatarImage>
                               </span>
                             ))}
                             {members.length > 4 && (

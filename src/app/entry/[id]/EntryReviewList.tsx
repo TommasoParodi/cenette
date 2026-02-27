@@ -1,5 +1,6 @@
 "use client";
 
+import { AvatarImage } from "@/components/AvatarImage";
 import { EntryReviewMenu } from "./EntryReviewMenu";
 import { ReviewComment } from "./ReviewComment";
 import { ReviewPhotoLightbox } from "./ReviewPhotoLightbox";
@@ -92,11 +93,9 @@ export function EntryReviewList({
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
-                  {authorAvatarUrl ? (
-                    <img src={authorAvatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    authorInitials
-                  )}
+                  <AvatarImage src={authorAvatarUrl}>
+                    {authorInitials}
+                  </AvatarImage>
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-foreground">{authorName}</p>

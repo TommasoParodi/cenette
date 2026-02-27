@@ -10,6 +10,7 @@ import { FilterAndListWrapper } from "./FilterAndListWrapper";
 import { GroupTopbarMenu } from "./GroupTopbarMenu";
 import { CopyableInviteCode } from "../CopyableInviteCode";
 import { AdminIcon } from "@/components/AdminIcon";
+import { AvatarImage } from "@/components/AvatarImage";
 
 const PLACEHOLDER_EVENT_IMAGE = "/images/placeholder-event.png";
 
@@ -304,11 +305,9 @@ export default async function GroupPage({
                                   className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-surface bg-avatar-member-bg text-xs font-medium text-foreground first:ml-0 -ml-2"
                                   title={title}
                                 >
-                                  {part.avatarUrl ? (
-                                    <img src={part.avatarUrl} alt="" className="h-full w-full object-cover" />
-                                  ) : (
-                                    part.initials
-                                  )}
+                                  <AvatarImage src={part.avatarUrl}>
+                                    {part.initials}
+                                  </AvatarImage>
                                 </span>
                               );
                               return isCreator ? (
