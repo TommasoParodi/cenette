@@ -19,13 +19,13 @@ export function FilterAndListWrapper({ groupId, currentSort, listContent }: Filt
 
   const onFilterChange = (href: string) => {
     startTransition(() => {
-      router.push(href);
+      router.replace(href);
     });
   };
 
   const onSortChange = (href: string) => {
     startTransition(() => {
-      router.push(href);
+      router.replace(href);
     });
   };
 

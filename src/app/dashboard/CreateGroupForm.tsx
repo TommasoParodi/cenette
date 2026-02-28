@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { createGroup } from "@/server-actions/groups";
 
 function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
@@ -26,20 +27,29 @@ function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
   );
 }
 
+type CreateGroupState = { data?: { redirectToDashboard?: true }; error?: string } | null;
+
 export function CreateGroupForm({
   redirectToGroup = false,
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
       const result = await createGroup(formData);
-      if (result.error) return result.error;
-      return null;
+      if (result.error) return { error: result.error };
+      return result as CreateGroupState;
     },
-    null as string | null
+    null as CreateGroupState
   );
 
-  const errorMessage = typeof state === "string" ? state : null;
+  useEffect(() => {
+    if (state?.data?.redirectToDashboard) {
+      router.replace("/dashboard");
+    }
+  }, [state, router]);
+
+  const errorMessage = state?.error ?? null;
   const [name, setName] = useState("");
   const isNameEmpty = !name.trim();
 

@@ -20,6 +20,7 @@ export default async function TerminiPage() {
         <Topbar
           showBack
           backHref={backHref}
+          backReplace
           title="Termini e Condizioni"
         />
         <div className="px-4 py-6 space-y-8 prose prose-sm max-w-none">

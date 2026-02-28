@@ -23,6 +23,7 @@ export function CenetteLogo({
   return (
     <Link
       href={href}
+      replace={href === "/dashboard"}
       className={`flex items-center gap-2 text-brand hover:opacity-90 ${className}`}
       aria-label="Cenette - vai alla home"
     >

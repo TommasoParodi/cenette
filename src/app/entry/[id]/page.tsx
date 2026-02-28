@@ -178,6 +178,7 @@ export default async function EntryPage({
           <Topbar
             showBack
             backHref={`/group/${entry.group_id}`}
+            backReplace
             title="Dettaglio Evento"
             right={
               entry.created_by === user.id ? (

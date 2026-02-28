@@ -77,6 +77,7 @@ export default async function EntryReviewPage({
         <Topbar
           showBack
           backHref={`/entry/${entryId}`}
+          backReplace
           title="La tua opinione"
         />
 

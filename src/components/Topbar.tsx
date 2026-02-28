@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const BackIcon = () => (
   <svg className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -13,6 +16,10 @@ export type TopbarProps = {
   showBack?: boolean;
   /** Link del pulsante Indietro */
   backHref?: string;
+  /** Se true, Indietro usa router.back() (per pagine transazionali) */
+  backReplace?: boolean;
+  /** Se true, Indietro va sempre a backHref con replace (es. dettaglio evento → lista eventi) */
+  backAlwaysToHref?: boolean;
   /** Contenuto a destra (es. Esci, Modifica, codice invito) */
   right?: React.ReactNode;
   /** Barra sticky in alto (default true) */
@@ -24,10 +31,14 @@ export function Topbar({
   title,
   showBack = false,
   backHref = "/dashboard",
+  backReplace = false,
+  backAlwaysToHref = false,
   right,
   sticky = true,
   className = "",
 }: TopbarProps) {
+  const router = useRouter();
+
   return (
     <header
       className={
@@ -41,7 +52,25 @@ export function Topbar({
           .join(" ")
       }
     >
-      {showBack && backHref ? (
+      {showBack && backHref ? backAlwaysToHref ? (
+        <button
+          type="button"
+          onClick={() => router.replace(backHref)}
+          className="flex shrink-0 items-center justify-center text-foreground/70 hover:text-foreground"
+          aria-label="Indietro"
+        >
+          <BackIcon />
+        </button>
+      ) : backReplace ? (
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex shrink-0 items-center justify-center text-foreground/70 hover:text-foreground"
+          aria-label="Indietro"
+        >
+          <BackIcon />
+        </button>
+      ) : (
         <Link
           href={backHref}
           className="flex shrink-0 items-center justify-center text-foreground/70 hover:text-foreground"
