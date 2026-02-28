@@ -91,6 +91,7 @@ export function EntryForm(props: EntryFormProps) {
   const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle ?? "");
+  const [avatarLoadErrors, setAvatarLoadErrors] = useState<Set<string>>(new Set());
   const photoInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -380,8 +381,13 @@ export function EntryForm(props: EntryFormProps) {
                     className="peer sr-only"
                   />
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-xs font-medium">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                    {avatarUrl && !avatarLoadErrors.has(m.id) ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={() => setAvatarLoadErrors((prev) => new Set(prev).add(m.id))}
+                      />
                     ) : (
                       initials
                     )}
