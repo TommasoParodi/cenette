@@ -81,7 +81,6 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           title="Profilo"
           showBack
           backHref="/dashboard"
-          backReplace
           right={
             <Link
               href="/dashboard/come-funziona"

@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
 import { joinGroup } from "@/server-actions/groups";
 
 function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
@@ -26,30 +25,21 @@ function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
   );
 }
 
-type JoinGroupState = { data?: { redirectToDashboard?: true }; error?: string } | null;
-
 export function JoinGroupForm({
   redirectToGroup = false,
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
-  const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
       const result = await joinGroup(formData);
-      if (result.error) return { error: result.error };
-      return result as JoinGroupState;
+      if (result.error) return result.error;
+      return null;
     },
-    null as JoinGroupState
+    null as string | null
   );
 
-  useEffect(() => {
-    if (state?.data?.redirectToDashboard) {
-      router.replace("/dashboard");
-    }
-  }, [state, router]);
-
-  const errorMessage = state?.error ?? null;
+  const errorMessage = typeof state === "string" ? state : null;
 
   return (
     <form action={formAction} className="flex flex-col gap-2">

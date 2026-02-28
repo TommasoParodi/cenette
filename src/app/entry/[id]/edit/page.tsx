@@ -98,7 +98,6 @@ export default async function EntryEditPage({
     <EntryFormPageLayout
       title="Modifica evento"
       backHref={`/entry/${entryId}`}
-      backReplace
     >
       <EntryForm
         mode="edit"

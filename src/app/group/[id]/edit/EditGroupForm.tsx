@@ -55,7 +55,7 @@ export function EditGroupForm({
   useEffect(() => {
     if (state && typeof state === "object" && "data" in state && state.data?.groupId) {
       router.refresh();
-      router.replace("/group/" + state.data.groupId);
+      router.push("/group/" + state.data.groupId);
     }
   }, [state, router]);
 
@@ -70,7 +70,7 @@ export function EditGroupForm({
     const result = await deleteGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      router.push("/dashboard");
     }
   };
 

@@ -6,16 +6,14 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 export default function ProfileLogoutButton() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function handleConfirm() {
-    try {
-      await fetch("/auth/logout", { method: "POST", redirect: "manual", credentials: "same-origin" });
-    } finally {
-      window.location.replace("/");
-    }
+  function handleConfirm() {
+    const form = document.getElementById("logout-form") as HTMLFormElement;
+    form?.requestSubmit();
   }
 
   return (
     <>
+      <form id="logout-form" action="/auth/logout" method="post" className="hidden" />
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}

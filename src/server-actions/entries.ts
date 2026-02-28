@@ -152,7 +152,7 @@ export async function createEntry(groupId: string, formData: FormData) {
   }
 
   revalidatePath(`/group/${groupId}`);
-  return { data: { groupId }, error: null };
+  redirect(`/group/${groupId}`);
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
@@ -314,7 +314,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   revalidatePath(`/entry/${entryId}`);
   revalidatePath(`/group/${entry.group_id}`);
-  return { data: { entryId }, error: null };
+  redirect(`/entry/${entryId}`);
 }
 
 export async function deleteEntryPhoto(formData: FormData) {

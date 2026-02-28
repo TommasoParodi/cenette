@@ -53,7 +53,7 @@ export function GroupTopbarMenu({
     const result = await deleteGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      router.push("/dashboard");
     } else if (result?.error) {
       alert(result.error);
     }
@@ -70,7 +70,7 @@ export function GroupTopbarMenu({
     const result = await leaveGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      router.push("/dashboard");
     } else if (result?.error) {
       alert(result.error);
     }

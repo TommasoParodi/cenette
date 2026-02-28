@@ -91,7 +91,6 @@ export function EntryForm(props: EntryFormProps) {
   const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
   const [voteModeConfirmOpen, setVoteModeConfirmOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle ?? "");
-  const [avatarLoadErrors, setAvatarLoadErrors] = useState<Set<string>>(new Set());
   const photoInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -218,7 +217,6 @@ export function EntryForm(props: EntryFormProps) {
       const result = await createEntry(groupId, newFormData);
       setPending(false);
       if (result?.error) setError(result.error);
-      else if (result?.data?.groupId) router.replace(`/group/${result.data.groupId}`);
     } else if (!isCreate && entryId) {
       for (const file of pendingPhotos) {
         newFormData.append("photos", file);
@@ -226,7 +224,6 @@ export function EntryForm(props: EntryFormProps) {
       const result = await updateEntry(entryId, newFormData);
       setPending(false);
       if (result?.error) setError(result.error);
-      else if (result?.data?.entryId) router.replace(`/entry/${result.data.entryId}`);
     } else {
       setPending(false);
     }
@@ -381,13 +378,8 @@ export function EntryForm(props: EntryFormProps) {
                     className="peer sr-only"
                   />
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-xs font-medium">
-                    {avatarUrl && !avatarLoadErrors.has(m.id) ? (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                        onError={() => setAvatarLoadErrors((prev) => new Set(prev).add(m.id))}
-                      />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
                       initials
                     )}

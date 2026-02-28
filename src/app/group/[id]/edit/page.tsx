@@ -40,7 +40,6 @@ export default async function GroupEditPage({
         <Topbar
           showBack
           backHref={`/group/${groupId}`}
-          backReplace
           title={
             <Link
               href={`/group/${groupId}`}

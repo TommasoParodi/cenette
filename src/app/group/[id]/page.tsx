@@ -176,7 +176,6 @@ export default async function GroupPage({
         <Topbar
           showBack
           backHref="/dashboard"
-          backReplace
           title={
             <span className="flex min-w-0 items-center gap-2">
               <span className="truncate text-lg font-semibold text-foreground">{group.name}</span>

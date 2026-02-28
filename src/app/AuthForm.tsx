@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
@@ -47,7 +46,6 @@ function GoogleIcon() {
 }
 
 export function AuthForm() {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -67,20 +65,12 @@ export function AuthForm() {
     clearMessages();
     setGoogleLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
         },
       });
-      if (error) {
-        setMessage({ type: "error", text: error.message });
-        return;
-      }
-      if (data?.url) {
-        window.location.replace(data.url);
-      }
     } finally {
       setGoogleLoading(false);
     }
@@ -109,7 +99,7 @@ export function AuthForm() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.replace("/dashboard");
+        window.location.href = "/dashboard";
         return;
       }
       const { data, error } = await supabase.auth.signUp({ email, password });
@@ -221,13 +211,12 @@ export function AuthForm() {
             showPasswordToggle
             labelAction={
               mode === "login" ? (
-                <Link
+                <a
                   href="/auth/reset-password"
-                  replace
                   className="text-sm font-medium text-accent hover:underline focus:outline-none focus:underline"
                 >
                   Dimenticata?
-                </Link>
+                </a>
               ) : undefined
             }
           />

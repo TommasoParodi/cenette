@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
             Se un account con <strong>{email}</strong> esiste, riceverai un link per reimpostare la
             password. Controlla anche la cartella spam.
           </p>
-          <Button type="button" variant="primary" onClick={() => router.replace("/")}>
+          <Button type="button" variant="primary" onClick={() => router.push("/")}>
             Torna all’accesso
           </Button>
         </div>
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
             </Button>
           </form>
           <p className="text-center text-sm text-text-secondary">
-            <Link href="/" replace className="text-accent hover:underline focus:outline-none focus:underline">
+            <Link href="/" className="text-accent hover:underline focus:outline-none focus:underline">
               Torna all’accesso
             </Link>
           </p>
@@ -229,7 +229,7 @@ export default function ResetPasswordPage() {
           </Button>
         </form>
         <p className="text-center text-sm text-text-secondary">
-          <Link href="/" replace className="text-accent hover:underline focus:outline-none focus:underline">
+          <Link href="/" className="text-accent hover:underline focus:outline-none focus:underline">
             Torna all’accesso
           </Link>
         </p>
