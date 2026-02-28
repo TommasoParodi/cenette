@@ -141,7 +141,7 @@ export function AuthForm() {
 
   if (registrationSuccess) {
     return (
-      <div className="w-full max-w-[min(24rem,90vw)] space-y-6 rounded-2xl bg-surface p-8 shadow-lg">
+      <div className="w-full max-w-[min(24rem,90vw)] space-y-6 rounded-2xl border border-card-border bg-surface p-8 shadow-card">
         <p className="text-center text-sm text-green-600">
           Controlla la tua email per il link di conferma, poi accedi.
         </p>
@@ -155,7 +155,7 @@ export function AuthForm() {
   return (
     <div className="flex w-full max-w-[min(24rem,90vw)] flex-col">
       <div
-        className={`relative mt-12 space-y-6 rounded-2xl bg-surface p-8 shadow-lg transition-opacity ${
+        className={`relative mt-12 space-y-6 rounded-2xl border border-card-border bg-surface p-8 shadow-card transition-opacity ${
           googleLoading ? "pointer-events-none select-none opacity-60" : ""
         }`}
         aria-busy={googleLoading}

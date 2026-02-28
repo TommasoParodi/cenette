@@ -32,8 +32,9 @@ export function Topbar({
     <header
       className={
         [
-          "flex items-center gap-3 border-b border-separator-line bg-background px-4 py-3",
-          sticky && "sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+          "flex items-center gap-3 border-b bg-surface px-4 py-3 shadow-[0_1px_3px_rgb(0_0_0_/0.06)]",
+          "border-b-[#E0E4E8]",
+          sticky && "sticky top-0 z-30",
           className,
         ]
           .filter(Boolean)
@@ -43,7 +44,7 @@ export function Topbar({
       {showBack && backHref ? (
         <Link
           href={backHref}
-          className="flex shrink-0 items-center justify-center text-text-secondary hover:text-foreground"
+          className="flex shrink-0 items-center justify-center text-foreground/70 hover:text-foreground"
           aria-label="Indietro"
         >
           <BackIcon />

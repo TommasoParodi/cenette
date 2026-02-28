@@ -111,7 +111,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
           ) : null}
 
           {/* Form nome */}
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-4 shadow-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-card-border bg-surface p-4 shadow-card">
             <h2 className="mb-3 text-sm font-medium text-foreground">
               Nome visualizzato
             </h2>

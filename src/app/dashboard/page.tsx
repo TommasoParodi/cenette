@@ -194,7 +194,7 @@ export default async function DashboardPage() {
                     <li key={g.id}>
                       <Link
                         href={`/group/${g.id}`}
-                        className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-sm transition hover:shadow-md"
+                        className="flex items-center gap-3 rounded-2xl border border-card-border bg-surface p-4 shadow-card transition hover:shadow-md"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">

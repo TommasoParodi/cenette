@@ -22,7 +22,7 @@ export function FormCard({
       role={role}
       aria-labelledby={ariaLabelledBy}
       hidden={hidden}
-      className={`relative rounded-2xl bg-surface p-4 shadow-sm transition-opacity ${
+      className={`relative rounded-2xl border border-card-border bg-surface p-4 shadow-card transition-opacity ${
         disabled ? "pointer-events-none opacity-50" : ""
       } ${className ?? ""}`}
     >

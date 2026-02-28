@@ -243,7 +243,7 @@ export default async function GroupPage({
                   <li key={e.id}>
                     <Link
                       href={`/entry/${e.id}`}
-                      className="block overflow-hidden rounded-xl bg-surface shadow-sm transition hover:shadow-md"
+                      className="block overflow-hidden rounded-xl border border-card-border bg-surface shadow-card transition hover:shadow-md"
                     >
                       <div className="relative aspect-[3/1] w-full bg-avatar-member-bg">
                         {imageUrl ? (

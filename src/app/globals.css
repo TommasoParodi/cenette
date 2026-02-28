@@ -1,63 +1,55 @@
 @import "tailwindcss";
 
-/* Tema Cenette - colori base e lista gruppi */
+/* Tema Cenette - palette moderna fredda */
 :root {
-  /* Sfondo app (livello globale) - beige chiaro più vivido */
-  --background: #F2E9DC;
-  --background-primary: #F2E9DC;
-  /* Brand / logo Cenette, pulsante Accedi, link */
+  /* Sfondo app - grigio chiarissimo freddo */
+  --background: #F8F9FB;
+  --background-primary: #F8F9FB;
+  /* Brand / logo Cenette (arancione) */
   --brand: #FFA740;
-  /* Variante brand header lista */
   --brand-header: #e69530;
-  /* Testo secondario (tagline, link sotto card) */
-  --text-secondary: #4A4A4A;
-  /* Testo terziario (slogan, "OPPURE") */
-  --text-tertiary: #888888;
-  /* Card e input - bianco caldo */
-  --surface: #FDFBF7;
-  /* Testo pulsante Google e etichette */
-  --text-muted: #4A4A4A;
-  --label: #4A4A4A;
-  /* Track tab (pill) - beige-grigio caldo */
-  --tabs-track: #E8DFD4;
-  /* Testo tab non attiva */
-  --tabs-track-inactive: #7A7268;
-  /* Separatori e bordi input */
-  --separator-text: #888888;
-  --separator-line: #CCCCCC;
-  /* Superficie muted (pulsante Google) - grigio-beige tenue */
-  --surface-muted: #E8E4DE;
-  /* Placeholder e bordi */
-  --placeholder: #BBBBBB;
-  /* Accent: pulsante primario, link Registrati/Dimenticata */
+  /* Testo primario */
+  --foreground: #111827;
+  /* Testo secondario */
+  --text-secondary: #6B7280;
+  /* Testo terziario / muted */
+  --text-tertiary: #9CA3AF;
+  --text-muted: #9CA3AF;
+  --label: #6B7280;
+  /* Card - bianco puro con bordo e shadow soft */
+  --surface: #FFFFFF;
+  --card-border: #ECEFF3;
+  /* Tab track e inattive */
+  --tabs-track: #ECEFF3;
+  --tabs-track-inactive: #9CA3AF;
+  /* Separatori e bordi (card, topbar) */
+  --separator-text: #9CA3AF;
+  --separator-line: #ECEFF3;
+  /* Superficie muted (pill inattive, hover) */
+  --surface-muted: #F3F4F6;
+  --placeholder: #9CA3AF;
+  /* Accento: solo CTA, icone importanti, highlight, stato attivo */
   --accent: #FFA740;
   --accent-foreground: #FFFFFF;
-  /* Accent FAB/CTA */
   --accent-strong: #e69530;
-  /* Avatar utente (rosa pallido) */
+  /* Avatar */
   --avatar-user-bg: #fce3e3;
-  /* Avatar membri (pesca/arancio chiaro) */
   --avatar-member-bg: #f9e5d8;
-  /* Rating medio (arancio) */
   --rating-medium: #e5906c;
-  /* Rating alto */
   --rating-high: #c3503b;
-  /* Badge Top / stella (giallo) */
   --badge-top: #ca8a04;
-  /* Testo generico su sfondo chiaro */
-  --foreground: #4A4A4A;
-  /* Base per tutti gli input: sfondo e bordo tenui, poco contrasto */
-  --input-bg: #F5F5F7;
-  --input-border: #E8E9EC;
+  /* Input */
+  --input-bg: #FFFFFF;
+  --input-border: #ECEFF3;
 }
 
 @theme inline {
-  /* Altezza "schermo" per PWA/mobile: 100dvh evita scroll superfluo (100vh supera la viewport visibile) */
   --min-height-screen: 100dvh;
   --color-background: var(--background);
   --color-background-primary: var(--background-primary);
   --color-brand: var(--brand);
   --color-brand-header: var(--brand-header);
+  --color-card-border: var(--card-border);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   --color-surface: var(--surface);
@@ -82,6 +74,8 @@
   --color-input-border: var(--input-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Shadow soft per card (non Material 2015) */
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 4px rgb(0 0 0 / 0.03);
 }
 
 /* Sfondo chiaro a livello di tutta l'app
@@ -103,4 +97,9 @@ body {
 
 .animate-shake {
   animation: shake 0.4s ease-in-out;
+}
+
+/* Card: bordo + shadow soft (non Material 2015) */
+.shadow-card {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 4px rgb(0 0 0 / 0.03);
 }

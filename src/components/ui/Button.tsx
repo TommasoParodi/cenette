@@ -11,7 +11,7 @@ const variantClasses: Record<
   primary:
     "bg-accent text-accent-foreground hover:opacity-90 focus-visible:ring-accent",
   secondary:
-    "border border-separator-line bg-surface-muted text-text-muted shadow-sm hover:bg-[#FAFAFA] focus-visible:ring-separator-line",
+    "border border-separator-line bg-surface-muted text-text-muted shadow-sm hover:bg-white focus-visible:ring-separator-line",
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -192,7 +192,7 @@ export default async function EntryPage({
             </div>
 
             <div className="px-4 -mt-6 relative z-10">
-              <div className="rounded-2xl bg-surface p-5 shadow-lg">
+              <div className="rounded-2xl border border-card-border bg-surface p-5 shadow-card">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold uppercase ${isHome ? "bg-accent/20 text-accent" : "bg-tabs-track text-tabs-track-inactive"}`}>
                     {isHome ? "A casa" : "Fuori"}

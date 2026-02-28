@@ -8,6 +8,7 @@ import {
   updateEntry,
 } from "@/server-actions/entries";
 import { compressPhotoFiles } from "@/lib/compress-photos";
+import { AddPhotoButton } from "@/components/AddPhotoButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName, inputDropzoneClassName } from "@/components/ui/inputBaseStyles";
@@ -286,7 +287,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setType("HOME")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              type === "HOME" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
+              type === "HOME" ? "bg-accent text-accent-foreground" : "bg-surface-muted text-text-secondary hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,7 +299,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setType("OUT")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              type === "OUT" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
+              type === "OUT" ? "bg-accent text-accent-foreground" : "bg-surface-muted text-text-secondary hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -317,7 +318,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setVoteMode("SIMPLE")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              voteMode === "SIMPLE" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
+              voteMode === "SIMPLE" ? "bg-accent text-accent-foreground" : "bg-surface-muted text-text-secondary hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -329,7 +330,7 @@ export function EntryForm(props: EntryFormProps) {
             type="button"
             onClick={() => setVoteMode("DETAILED")}
             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-              voteMode === "DETAILED" ? "bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20"
+              voteMode === "DETAILED" ? "bg-accent text-accent-foreground" : "bg-surface-muted text-text-secondary hover:bg-accent/20"
             }`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -364,7 +365,7 @@ export function EntryForm(props: EntryFormProps) {
               <li key={m.id}>
                 <label
                   className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition ${
-                    isCreator ? "cursor-default bg-accent text-accent-foreground" : "bg-[#F2F4F8] text-[#24374A] hover:bg-accent/20 has-[:checked]:bg-accent has-[:checked]:text-accent-foreground"
+                    isCreator ? "cursor-default bg-accent text-accent-foreground" : "bg-surface-muted text-text-secondary hover:bg-accent/20 has-[:checked]:bg-accent has-[:checked]:text-accent-foreground"
                   }`}
                   title={isCreator ? "L'organizzatore è sempre partecipante" : undefined}
                 >
@@ -413,18 +414,11 @@ export function EntryForm(props: EntryFormProps) {
 
             if (isAddSlot) {
               return (
-                <button
+                <AddPhotoButton
                   key="add"
-                  type="button"
                   onClick={() => photoInputRef.current?.click()}
                   disabled={photoAddPending}
-                  className="flex aspect-square w-full max-w-[120px] flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-accent bg-transparent transition hover:bg-accent/10 disabled:opacity-50"
-                  aria-label="Aggiungi foto"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/icons/camera-plus.png" alt="" className="h-10 w-10 object-contain mix-blend-multiply" width={40} height={40} aria-hidden />
-                  <span className="text-xs font-bold uppercase tracking-wide text-accent">Aggiungi</span>
-                </button>
+                />
               );
             }
             if (serverPhoto) {

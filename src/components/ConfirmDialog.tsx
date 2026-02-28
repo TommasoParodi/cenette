@@ -57,7 +57,7 @@ export function ConfirmDialog({
       onClick={handleBackdropClick}
     >
       <div
-        className="relative w-full max-w-sm rounded-2xl border border-separator-line bg-surface p-5 shadow-xl"
+        className="relative w-full max-w-sm rounded-2xl border border-card-border bg-surface p-5 shadow-card"
         onClick={(e) => e.stopPropagation()}
       >
         {pending && (

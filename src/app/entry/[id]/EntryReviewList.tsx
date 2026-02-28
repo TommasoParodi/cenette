@@ -89,7 +89,7 @@ export function EntryReviewList({
         const reviewPhotoUrl = reviewPhotoUrls[r.id];
 
         return (
-          <li key={r.id} className="rounded-2xl bg-surface p-4 shadow-sm">
+          <li key={r.id} className="rounded-2xl border border-card-border bg-surface p-4 shadow-card">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-avatar-member-bg text-sm font-medium text-brand">
