@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
@@ -25,6 +25,7 @@ function isPasswordValid(pwd: string) {
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,15 +34,51 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
-  // Se l’utente arriva dal link nella email, l’URL contiene type=recovery (prima che Supabase processi l’hash)
-  const isRecoveryLink =
+  // Link di recovery: con PKCE Supabase reindirizza con ?code=...; con implicit flow l’hash contiene type=recovery
+  const code = searchParams.get("code");
+  const errorCode = searchParams.get("error_code");
+  const errorDescription = searchParams.get("error_description");
+  const isRecoveryHash =
     typeof window !== "undefined" && window.location.hash.includes("type=recovery");
 
+  // Mostra messaggio se Supabase reindirizza qui con errore (link scaduto, non valido, ecc.)
   useEffect(() => {
-    if (isRecoveryLink) {
+    const authError = searchParams.get("error");
+    if (!authError || (!errorCode && !errorDescription)) return;
+    const msg =
+      errorCode === "otp_expired"
+        ? "Il link è scaduto o non è più valido. Richiedi un nuovo link qui sotto."
+        : (errorDescription ? decodeURIComponent(errorDescription.replace(/\+/g, " ")) : "Link non valido.");
+    setMessage({ type: "error", text: msg });
+    setStep("email");
+    router.replace("/auth/reset-password", { scroll: false });
+  }, [searchParams, errorCode, errorDescription, router]);
+
+  useEffect(() => {
+    if (isRecoveryHash) {
       setStep("update");
+      return;
     }
-  }, [isRecoveryLink]);
+    if (!code) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (cancelled) return;
+        if (error) throw error;
+        setStep("update");
+        // Rimuovi il code dall’URL per sicurezza e per evitare ri-scambio
+        router.replace("/auth/reset-password", { scroll: false });
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const text = err instanceof Error ? err.message : "Link non valido o scaduto.";
+        setMessage({ type: "error", text });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [code, isRecoveryHash, router]);
 
   async function handleRequestEmail(e: React.FormEvent) {
     e.preventDefault();
