@@ -218,6 +218,7 @@ export function EntryForm(props: EntryFormProps) {
       const result = await createEntry(groupId, newFormData);
       setPending(false);
       if (result?.error) setError(result.error);
+      else if (result?.data) router.back();
     } else if (!isCreate && entryId) {
       for (const file of pendingPhotos) {
         newFormData.append("photos", file);
@@ -225,6 +226,7 @@ export function EntryForm(props: EntryFormProps) {
       const result = await updateEntry(entryId, newFormData);
       setPending(false);
       if (result?.error) setError(result.error);
+      else if (result?.data) router.replace(`/entry/${entryId}`);
     } else {
       setPending(false);
     }

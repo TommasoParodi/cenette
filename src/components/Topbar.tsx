@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TopbarBackButton } from "@/components/TopbarBackButton";
 
 const BackIcon = () => (
   <svg className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -13,6 +14,8 @@ export type TopbarProps = {
   showBack?: boolean;
   /** Link del pulsante Indietro */
   backHref?: string;
+  /** Se true, navigazione con replace (la pagina corrente non resta in history) */
+  backReplace?: boolean;
   /** Contenuto a destra (es. Esci, Modifica, codice invito) */
   right?: React.ReactNode;
   /** Barra sticky in alto (default true) */
@@ -24,6 +27,7 @@ export function Topbar({
   title,
   showBack = false,
   backHref = "/dashboard",
+  backReplace = false,
   right,
   sticky = true,
   className = "",
@@ -41,7 +45,9 @@ export function Topbar({
           .join(" ")
       }
     >
-      {showBack && backHref ? (
+      {showBack && backHref ? backReplace ? (
+        <TopbarBackButton backHref={backHref} />
+      ) : (
         <Link
           href={backHref}
           className="flex shrink-0 items-center justify-center text-foreground/70 hover:text-foreground"

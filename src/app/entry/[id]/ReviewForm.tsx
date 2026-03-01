@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useEffect, startTransition, type ReactElement } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { createOrUpdateReview } from "@/server-actions/entries";
 import { AddPhotoButton } from "@/components/AddPhotoButton";
@@ -116,7 +117,7 @@ function ReviewFormContent({
   initialPhotoUrl,
   state,
   selectedPhotoRef,
-}: Props & { state: string | null; selectedPhotoRef: React.MutableRefObject<File | null> }) {
+}: Props & { state: { data?: { entryId: string }; error?: string } | null; selectedPhotoRef: React.MutableRefObject<File | null> }) {
   const { pending } = useFormStatus();
   const isEdit = initialRating != null;
   const isDetailed = voteMode === "DETAILED";
@@ -319,7 +320,7 @@ function ReviewFormContent({
         </div>
       </section>
 
-      {state && <p className="mb-4 text-sm text-red-600">{state}</p>}
+      {state?.error && <p className="mb-4 text-sm text-red-600">{state.error}</p>}
 
       <button
         type="submit"
@@ -338,15 +339,23 @@ function ReviewFormContent({
 }
 
 export function ReviewForm(props: Props) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
-      const result = await createOrUpdateReview(props.entryId, formData);
-      if (result?.error) return result.error;
-      return null;
+      return createOrUpdateReview(props.entryId, formData);
     },
-    null as string | null
+    null as { data?: { entryId: string }; error?: string } | null
   );
   const selectedPhotoRef = useRef<File | null>(null);
+
+  const navigatedRef = useRef(false);
+  useEffect(() => {
+    if (navigatedRef.current) return;
+    if (state?.data) {
+      navigatedRef.current = true;
+      router.replace(`/entry/${props.entryId}`);
+    }
+  }, [state, router, props.entryId]);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

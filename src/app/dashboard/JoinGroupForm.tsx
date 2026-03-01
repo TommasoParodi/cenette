@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { joinGroup } from "@/server-actions/groups";
 
@@ -29,17 +30,25 @@ export function JoinGroupForm({
   redirectToGroup = false,
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
+  const router = useRouter();
   const [inviteCode, setInviteCode] = useState("");
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
-      const result = await joinGroup(formData);
-      if (result.error) return result.error;
-      return null;
+      return joinGroup(formData);
     },
-    null as string | null
+    null as { data?: { groupId: string }; error?: string } | null
   );
 
-  const errorMessage = typeof state === "string" ? state : null;
+  const navigatedRef = useRef(false);
+  useEffect(() => {
+    if (navigatedRef.current) return;
+    if (state && !state.error && redirectToGroup) {
+      navigatedRef.current = true;
+      router.replace("/dashboard");
+    }
+  }, [state, redirectToGroup, router]);
+
+  const errorMessage = state?.error ?? null;
 
   return (
     <form action={formAction} className="flex flex-col gap-2">

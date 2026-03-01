@@ -64,10 +64,11 @@ export default async function NewEntryPage({
   });
 
   return (
-    <EntryFormPageLayout
-      title="Nuovo evento"
-      backHref={`/group/${groupId}`}
-    >
+<EntryFormPageLayout
+        title="Nuovo evento"
+        backHref={`/group/${groupId}`}
+        backReplace
+      >
       <EntryForm
         mode="create"
         groupId={groupId}

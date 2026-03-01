@@ -50,7 +50,7 @@ export function EntryPageActionsProvider({
     try {
       const result = await deleteEntryAction(entryId);
       if (result?.data && "groupId" in result.data) {
-        router.push(`/group/${result.data.groupId}`);
+        router.replace(`/group/${result.data.groupId}`);
       } else if (result?.error) {
         alert(result.error);
       }

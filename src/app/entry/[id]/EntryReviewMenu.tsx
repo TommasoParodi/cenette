@@ -76,6 +76,7 @@ export function EntryReviewMenu({
         >
           <Link
             href={`/entry/${entryId}/review`}
+            replace
             className="block px-4 py-2 text-sm text-foreground hover:bg-surface-muted"
             role="menuitem"
             onClick={() => setOpen(false)}

@@ -54,6 +54,19 @@ export default function ResetPasswordPage() {
     router.replace("/auth/reset-password", { scroll: false });
   }, [searchParams, errorCode, errorDescription, router]);
 
+  // Arrivo da callback dopo exchange lato server: sessione già presente, mostra form nuova password
+  useEffect(() => {
+    if (code || searchParams.get("error") || isRecoveryHash) return;
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) setStep("update");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [code, searchParams, isRecoveryHash]);
+
   useEffect(() => {
     if (isRecoveryHash) {
       setStep("update");
@@ -67,7 +80,6 @@ export default function ResetPasswordPage() {
         if (cancelled) return;
         if (error) throw error;
         setStep("update");
-        // Rimuovi il code dall’URL per sicurezza e per evitare ri-scambio
         router.replace("/auth/reset-password", { scroll: false });
       } catch (err: unknown) {
         if (cancelled) return;
@@ -86,7 +98,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       });
       if (error) throw error;
       setStep("sent");

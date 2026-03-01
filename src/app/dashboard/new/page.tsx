@@ -13,7 +13,7 @@ export default async function NewGroupPage() {
   return (
     <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl">
-        <Topbar showBack backHref="/dashboard" title="Nuovo gruppo" />
+        <Topbar showBack backHref="/dashboard" backReplace title="Nuovo gruppo" />
         <div className="px-6 pt-6">
           <p className="text-sm text-text-secondary">
             Crea un gruppo o entra con un codice invito

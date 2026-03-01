@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 export type EntryType = "HOME" | "OUT";
 export type VoteMode = "SIMPLE" | "DETAILED";
@@ -152,7 +152,7 @@ export async function createEntry(groupId: string, formData: FormData) {
   }
 
   revalidatePath(`/group/${groupId}`);
-  redirect(`/group/${groupId}`);
+  return { data: { groupId }, error: null };
 }
 
 export async function updateEntry(entryId: string, formData: FormData) {
@@ -314,7 +314,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   revalidatePath(`/entry/${entryId}`);
   revalidatePath(`/group/${entry.group_id}`);
-  redirect(`/entry/${entryId}`);
+  return { data: { entryId }, error: null };
 }
 
 export async function deleteEntryPhoto(formData: FormData) {
@@ -355,7 +355,7 @@ export async function deleteEntryPhoto(formData: FormData) {
 
   revalidatePath(`/entry/${photo.entry_id}`);
   revalidatePath(`/group/${entry.group_id}`);
-  redirect(`/entry/${photo.entry_id}/edit`);
+  redirect(`/entry/${photo.entry_id}/edit`, RedirectType.replace);
 }
 
 /** Carica subito le foto selezionate (senza salvare il resto del form). Redirect alla stessa pagina modifica. */
@@ -593,7 +593,7 @@ export async function createOrUpdateReview(entryId: string, formData: FormData) 
   }
 
   revalidatePath(`/entry/${entryId}`);
-  redirect(`/entry/${entryId}`);
+  return { data: { entryId }, error: null };
 }
 
 export async function deleteReview(reviewId: string, entryId: string) {

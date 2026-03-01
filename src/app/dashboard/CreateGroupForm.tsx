@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { createGroup } from "@/server-actions/groups";
 
@@ -30,16 +31,24 @@ export function CreateGroupForm({
   redirectToGroup = false,
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
+  const router = useRouter();
   const [state, formAction] = useActionState(
     async (_: unknown, formData: FormData) => {
-      const result = await createGroup(formData);
-      if (result.error) return result.error;
-      return null;
+      return createGroup(formData);
     },
-    null as string | null
+    null as { data?: { groupId: string }; error?: string } | null
   );
 
-  const errorMessage = typeof state === "string" ? state : null;
+  const navigatedRef = useRef(false);
+  useEffect(() => {
+    if (navigatedRef.current) return;
+    if (state && !state.error && redirectToGroup) {
+      navigatedRef.current = true;
+      router.replace("/dashboard");
+    }
+  }, [state, redirectToGroup, router]);
+
+  const errorMessage = state?.error ?? null;
   const [name, setName] = useState("");
   const isNameEmpty = !name.trim();
 
