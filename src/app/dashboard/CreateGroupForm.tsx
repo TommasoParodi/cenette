@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { createGroup } from "@/server-actions/groups";
 
+type CreateGroupState =
+  | null
+  | { error: string; data?: undefined }
+  | { data: { groupId: string }; error: null };
+
 function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
   const { pending } = useFormStatus();
   useEffect(() => {
@@ -32,11 +37,15 @@ export function CreateGroupForm({
   onPendingChange,
 }: { redirectToGroup?: boolean; onPendingChange?: (pending: boolean) => void } = {}) {
   const router = useRouter();
-  const [state, formAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      return createGroup(formData);
+  const [state, formAction] = useActionState<CreateGroupState, FormData>(
+    async (_prevState: CreateGroupState, formData: FormData) => {
+      const result = await createGroup(formData);
+      if ("error" in result && result.error) {
+        return { error: result.error, data: undefined };
+      }
+      return { data: result.data!, error: null };
     },
-    null as { data?: { groupId: string }; error?: string } | null
+    null
   );
 
   const navigatedRef = useRef(false);

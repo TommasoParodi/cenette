@@ -8,6 +8,11 @@ import { AddPhotoButton } from "@/components/AddPhotoButton";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName } from "@/components/ui/inputBaseStyles";
 
+type ReviewFormState =
+  | null
+  | { error: string; data?: undefined }
+  | { data: { entryId: string }; error: null };
+
 type Props = {
   entryId: string;
   voteMode: "SIMPLE" | "DETAILED";
@@ -117,7 +122,7 @@ function ReviewFormContent({
   initialPhotoUrl,
   state,
   selectedPhotoRef,
-}: Props & { state: { data?: { entryId: string }; error?: string } | null; selectedPhotoRef: React.MutableRefObject<File | null> }) {
+}: Props & { state: ReviewFormState; selectedPhotoRef: React.MutableRefObject<File | null> }) {
   const { pending } = useFormStatus();
   const isEdit = initialRating != null;
   const isDetailed = voteMode === "DETAILED";
@@ -340,11 +345,15 @@ function ReviewFormContent({
 
 export function ReviewForm(props: Props) {
   const router = useRouter();
-  const [state, formAction] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      return createOrUpdateReview(props.entryId, formData);
+  const [state, formAction] = useActionState<ReviewFormState, FormData>(
+    async (_prevState: ReviewFormState, formData: FormData) => {
+      const result = await createOrUpdateReview(props.entryId, formData);
+      if ("error" in result && result.error) {
+        return { error: result.error, data: undefined };
+      }
+      return { data: result.data!, error: null };
     },
-    null as { data?: { entryId: string }; error?: string } | null
+    null
   );
   const selectedPhotoRef = useRef<File | null>(null);
 
