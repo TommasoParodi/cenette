@@ -8,24 +8,32 @@ import { updateGroup, deleteGroup } from "@/server-actions/groups";
 
 type FormState = string | { data: { groupId: string } } | null;
 
-function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
+function PendingNotifier({
+  onPendingChange,
+  redirecting,
+}: { onPendingChange?: (pending: boolean) => void; redirecting: boolean }) {
   const { pending } = useFormStatus();
+  const showLoading = pending || redirecting;
   useEffect(() => {
-    onPendingChange?.(pending);
-  }, [pending, onPendingChange]);
+    onPendingChange?.(showLoading);
+  }, [showLoading, onPendingChange]);
   return null;
 }
 
-function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
+function SubmitButton({
+  disabledWhenEmpty,
+  redirecting,
+}: { disabledWhenEmpty?: boolean; redirecting: boolean }) {
   const { pending } = useFormStatus();
-  const disabled = pending || disabledWhenEmpty;
+  const showLoading = pending || redirecting;
+  const disabled = showLoading || disabledWhenEmpty;
   return (
     <button
       type="submit"
       disabled={disabled}
       className="inline-flex items-center justify-center gap-2 self-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed w-fit"
     >
-      {pending ? "Attendere…" : "Salva"}
+      {showLoading ? "Attendere…" : "Salva"}
     </button>
   );
 }
@@ -52,8 +60,10 @@ export function EditGroupForm({
     null as FormState
   );
 
+  const [redirecting, setRedirecting] = useState(false);
   useEffect(() => {
     if (state && typeof state === "object" && "data" in state && state.data?.groupId) {
+      setRedirecting(true);
       router.refresh();
       router.replace("/group/" + state.data.groupId);
     }
@@ -77,7 +87,7 @@ export function EditGroupForm({
   return (
     <div className="flex flex-col gap-8">
       <form action={formAction} className="flex flex-col gap-2">
-        <PendingNotifier onPendingChange={onPendingChange} />
+        <PendingNotifier onPendingChange={onPendingChange} redirecting={redirecting} />
         <h3 className="text-sm font-medium text-label">
           Nome gruppo <span className="text-red-600" aria-hidden>*</span>
         </h3>
@@ -93,7 +103,7 @@ export function EditGroupForm({
         {errorMessage && (
           <p className="text-sm text-red-600">{errorMessage}</p>
         )}
-        <SubmitButton disabledWhenEmpty={isNameEmpty} />
+        <SubmitButton disabledWhenEmpty={isNameEmpty} redirecting={redirecting} />
       </form>
 
       {isCreator && (

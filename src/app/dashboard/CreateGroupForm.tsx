@@ -10,24 +10,32 @@ type CreateGroupState =
   | { error: string; data?: undefined }
   | { data: { groupId: string }; error: null };
 
-function PendingNotifier({ onPendingChange }: { onPendingChange?: (pending: boolean) => void }) {
+function PendingNotifier({
+  onPendingChange,
+  redirecting,
+}: { onPendingChange?: (pending: boolean) => void; redirecting: boolean }) {
   const { pending } = useFormStatus();
+  const showLoading = pending || redirecting;
   useEffect(() => {
-    onPendingChange?.(pending);
-  }, [pending, onPendingChange]);
+    onPendingChange?.(showLoading);
+  }, [showLoading, onPendingChange]);
   return null;
 }
 
-function SubmitButton({ disabledWhenEmpty }: { disabledWhenEmpty?: boolean }) {
+function SubmitButton({
+  disabledWhenEmpty,
+  redirecting,
+}: { disabledWhenEmpty?: boolean; redirecting: boolean }) {
   const { pending } = useFormStatus();
-  const disabled = pending || disabledWhenEmpty;
+  const showLoading = pending || redirecting;
+  const disabled = showLoading || disabledWhenEmpty;
   return (
     <button
       type="submit"
       disabled={disabled}
       className="inline-flex items-center justify-center gap-2 self-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed w-fit"
     >
-      {pending ? "Attendere…" : "Crea gruppo"}
+      {showLoading ? "Attendere…" : "Crea gruppo"}
     </button>
   );
 }
@@ -48,11 +56,13 @@ export function CreateGroupForm({
     null
   );
 
+  const [redirecting, setRedirecting] = useState(false);
   const navigatedRef = useRef(false);
   useEffect(() => {
     if (navigatedRef.current) return;
     if (state && !state.error && redirectToGroup) {
       navigatedRef.current = true;
+      setRedirecting(true);
       router.replace("/dashboard");
     }
   }, [state, redirectToGroup, router]);
@@ -63,7 +73,7 @@ export function CreateGroupForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-2">
-      <PendingNotifier onPendingChange={onPendingChange} />
+      <PendingNotifier onPendingChange={onPendingChange} redirecting={redirecting} />
       {redirectToGroup && (
         <input type="hidden" name="redirect_to_dashboard" value="1" />
       )}
@@ -82,7 +92,7 @@ export function CreateGroupForm({
       {errorMessage && (
         <p className="text-sm text-red-600">{errorMessage}</p>
       )}
-      <SubmitButton disabledWhenEmpty={isNameEmpty} />
+      <SubmitButton disabledWhenEmpty={isNameEmpty} redirecting={redirecting} />
     </form>
   );
 }

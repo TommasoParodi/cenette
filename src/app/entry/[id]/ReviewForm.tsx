@@ -122,8 +122,14 @@ function ReviewFormContent({
   initialPhotoUrl,
   state,
   selectedPhotoRef,
-}: Props & { state: ReviewFormState; selectedPhotoRef: React.MutableRefObject<File | null> }) {
+  redirecting,
+}: Props & {
+  state: ReviewFormState;
+  selectedPhotoRef: React.MutableRefObject<File | null>;
+  redirecting: boolean;
+}) {
   const { pending } = useFormStatus();
+  const showLoading = pending || redirecting;
   const isEdit = initialRating != null;
   const isDetailed = voteMode === "DETAILED";
   const [overallRating, setOverallRating] = useState<number | null>(initialRating ?? null);
@@ -172,7 +178,7 @@ function ReviewFormContent({
 
   return (
     <>
-      {pending && (
+      {showLoading && (
         <div
           className="fixed inset-0 z-10 flex items-center justify-center bg-background/80"
           aria-hidden
@@ -299,7 +305,7 @@ function ReviewFormContent({
                   className="h-full w-full object-cover"
                 />
               </div>
-              {pending && (
+              {showLoading && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/30">
                   <LoadingSpinner className="h-8 w-8 border-2 border-white/40 border-t-white" />
                 </div>
@@ -307,7 +313,7 @@ function ReviewFormContent({
               <button
                 type="button"
                 onClick={showNewPreview ? clearNewPhoto : clearInitialPhoto}
-                disabled={pending}
+                disabled={showLoading}
                 className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-white shadow disabled:opacity-70"
                 aria-label="Rimuovi foto"
               >
@@ -319,7 +325,7 @@ function ReviewFormContent({
           ) : (
             <AddPhotoButton
               onClick={() => fileInputRef.current?.click()}
-              disabled={pending}
+              disabled={showLoading}
             />
           )}
         </div>
@@ -329,11 +335,11 @@ function ReviewFormContent({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={showLoading}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-4 text-base font-semibold text-accent-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
       >
-        {pending ? "Invio in corso…" : isEdit ? "Aggiorna recensione" : "Pubblica recensione"}
-        {!pending && <IconArrowRight />}
+        {showLoading ? "Invio in corso…" : isEdit ? "Aggiorna recensione" : "Pubblica recensione"}
+        {!showLoading && <IconArrowRight />}
       </button>
 
       <p className="mt-4 text-center text-xs text-text-tertiary">
@@ -357,11 +363,13 @@ export function ReviewForm(props: Props) {
   );
   const selectedPhotoRef = useRef<File | null>(null);
 
+  const [redirecting, setRedirecting] = useState(false);
   const navigatedRef = useRef(false);
   useEffect(() => {
     if (navigatedRef.current) return;
     if (state?.data) {
       navigatedRef.current = true;
+      setRedirecting(true);
       router.replace(`/entry/${props.entryId}`);
     }
   }, [state, router, props.entryId]);
@@ -381,7 +389,12 @@ export function ReviewForm(props: Props) {
 
   return (
     <form action={formAction} onSubmit={handleSubmit} className="relative flex flex-col pb-8">
-      <ReviewFormContent {...props} state={state} selectedPhotoRef={selectedPhotoRef} />
+      <ReviewFormContent
+        {...props}
+        state={state}
+        selectedPhotoRef={selectedPhotoRef}
+        redirecting={redirecting}
+      />
     </form>
   );
 }

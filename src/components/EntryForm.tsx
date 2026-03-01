@@ -216,17 +216,29 @@ export function EntryForm(props: EntryFormProps) {
         newFormData.append("photos", file);
       }
       const result = await createEntry(groupId, newFormData);
-      setPending(false);
-      if (result?.error) setError(result.error);
-      else if (result?.data) router.back();
+      if (result?.error) {
+        setPending(false);
+        setError(result.error);
+      } else if (result?.data) {
+        router.back();
+        // Non resettare pending: l'overlay resta fino alla navigazione, evita il flicker
+      } else {
+        setPending(false);
+      }
     } else if (!isCreate && entryId) {
       for (const file of pendingPhotos) {
         newFormData.append("photos", file);
       }
       const result = await updateEntry(entryId, newFormData);
-      setPending(false);
-      if (result?.error) setError(result.error);
-      else if (result?.data) router.replace(`/entry/${entryId}`);
+      if (result?.error) {
+        setPending(false);
+        setError(result.error);
+      } else if (result?.data) {
+        router.replace(`/entry/${entryId}`);
+        // Non resettare pending: l'overlay resta fino alla navigazione, evita il flicker
+      } else {
+        setPending(false);
+      }
     } else {
       setPending(false);
     }
