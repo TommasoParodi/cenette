@@ -23,21 +23,34 @@ export default async function ComeFunzionaPage() {
             <h2 className="text-xl font-semibold tracking-tight text-brand flex justify-center">
               <CenetteLogo href="/dashboard" />
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Cenette è l&apos;app per organizzare cene con amici e familiari: crea gruppi, proponi eventi e conserva le recensioni delle serate. Qui sotto trovi come funzionano gruppi, eventi e recensioni.
-            </p>
+            <div className="mt-2 space-y-3 text-sm text-text-secondary">
+              <p>
+                Cenette è un modo semplice per organizzare cene, pranzi o colazioni con amici o familiari e ricordarsi le occasioni più belle.
+              </p>
+              <p>
+                Con l&apos;app puoi creare gruppi con le persone con cui esci più spesso, organizzare facilmente nuovi pasti e lasciare una recensione con voti e commenti. In questo modo rimangono salvati i ricordi delle serate, i piatti migliori e le opinioni di tutti.
+              </p>
+              <p>
+                L&apos;idea è molto semplice: un gruppo di amici, tanti momenti a tavola, e un posto dove tenerne traccia.
+              </p>
+            </div>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold tracking-tight text-brand">
               Gruppi
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Dalla dashboard tocchi &quot;Nuovo gruppo&quot;, dai un nome al gruppo e l&apos;app ti assegna un codice invito. 
-              Condividi quel codice (a messaggio o a voce) con chi vuoi invitare: entrano nella schermata &quot;Nuovo gruppo&quot;, 
-              incollano il codice e si uniscono. Da quel momento vedono il gruppo nella loro dashboard e possono aprire 
-              la pagina del gruppo per vedere e creare eventi.
-            </p>
+            <div className="mt-2 space-y-3 text-sm text-text-secondary">
+              <p>
+                I gruppi servono per riunire le persone con cui organizzi cene, pranzi o colazioni.
+              </p>
+              <p>
+                Puoi creare un nuovo gruppo dalla dashboard e condividere con gli amici il codice invito generato dall&apos;app. Chi riceve il codice può inserirlo nella schermata &quot;Nuovo gruppo&quot; ed entrare subito.
+              </p>
+              <p>
+                Una volta dentro, tutti i membri vedono il gruppo nella propria dashboard e possono aprirlo per vedere i pasti già fatti o organizzarne di nuovi.
+              </p>
+            </div>
             <div className="flex justify-center mt-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -51,20 +64,24 @@ export default async function ComeFunzionaPage() {
 
           <section>
             <h2 className="text-xl font-semibold tracking-tight text-brand">
-              Eventi
+              Eventi (cene, pranzi, colazioni)
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Entrando in un gruppo trovi la lista degli eventi. Per crearne uno tocchi &quot;Nuovo evento&quot;, inserisci 
-              data, luogo e una breve descrizione; il creatore dell&apos;evento sceglie anche i partecipanti alla cena 
-              tra i membri del gruppo. L&apos;evento compare nella lista e tutti i membri del gruppo lo vedono. 
-              Il giorno della cena puoi aprire l&apos;evento per consultare i dettagli. Dopo che la serata è passata, 
-              dalla stessa pagina (o dalla lista) puoi avviare la recensione.
-            </p>
+            <div className="mt-2 space-y-3 text-sm text-text-secondary">
+              <p>
+                All&apos;interno di ogni gruppo puoi creare un nuovo evento: una cena, un pranzo o una colazione.
+              </p>
+              <p>
+                Quando crei un evento inserisci: la data, il tipo (a casa oppure fuori) e una breve descrizione. Puoi anche scegliere quali membri del gruppo parteciperanno.
+              </p>
+              <p>
+                Una volta creato, l&apos;evento appare nella lista del gruppo così tutti possono vedere i dettagli, aprirlo e consultare le informazioni.
+              </p>
+            </div>
             <div className="flex justify-center mt-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/illustrazione-2-nb.png"
-                alt="Cena in gruppo: persone attorno al tavolo"
+                alt="Pasti in gruppo: persone attorno al tavolo"
                 width={280}
                 className="h-auto w-[280px] object-contain"
               />
@@ -75,12 +92,17 @@ export default async function ComeFunzionaPage() {
             <h2 className="text-xl font-semibold tracking-tight text-brand">
               Recensioni
             </h2>
-            <p className="mt-2 text-sm text-text-secondary">
-              Quando l&apos;evento è trascorso, dall&apos;evento compare l&apos;opzione per scrivere la recensione. Apri la schermata, 
-              dai un voto e aggiungi note (piatto preferito, atmosfera, ecc.): si salva e resta legata a quell&apos;evento. 
-              In seguito, riaprendo l&apos;evento dalla lista del gruppo, puoi tornare alla recensione per rileggerla o 
-              modificarla.
-            </p>
+            <div className="mt-2 space-y-3 text-sm text-text-secondary">
+              <p>
+                Per ogni evento puoi lasciare una recensione con voti e commenti.
+              </p>
+              <p>
+                Puoi scegliere tra: una recensione semplice, con solo il voto; oppure una recensione dettagliata, dove aggiungere anche note o commenti sull&apos;occasione.
+              </p>
+              <p>
+                Le recensioni rimangono salvate nell&apos;evento, così in futuro puoi tornare a vedere com&apos;è andata quella serata e confrontarla con le altre.
+              </p>
+            </div>
             <div className="flex justify-center mt-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
