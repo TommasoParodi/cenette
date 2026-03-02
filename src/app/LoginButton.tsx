@@ -4,12 +4,21 @@ import { supabase } from "@/lib/supabase/client";
 
 export function LoginButton() {
   async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
       },
     });
+    if (error) {
+      throw error;
+    }
+    if (data?.url) {
+      window.location.replace(data.url);
+      return;
+    }
+    throw new Error("Impossibile avviare l'accesso con Google.");
   }
 
   return (
@@ -22,4 +31,3 @@ export function LoginButton() {
     </button>
   );
 }
-

@@ -7,6 +7,7 @@ import { createOrUpdateReview } from "@/server-actions/entries";
 import { AddPhotoButton } from "@/components/AddPhotoButton";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName } from "@/components/ui/inputBaseStyles";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type ReviewFormState =
   | null
@@ -111,7 +112,6 @@ function SliderRow({
 }
 
 function ReviewFormContent({
-  entryId,
   voteMode,
   initialRating,
   initialComment,
@@ -147,11 +147,12 @@ function ReviewFormContent({
   const [removeInitialPhoto, setRemoveInitialPhoto] = useState(false);
 
   useEffect(() => {
-    if (!selectedFile) return;
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const showInitialPhoto = initialPhotoUrl && !removeInitialPhoto;
   const showNewPreview = previewUrl && selectedFile;
@@ -160,12 +161,22 @@ function ReviewFormContent({
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     setSelectedFile(file ?? null);
-    if (!file) setPreviewUrl(null);
+    setPreviewUrl((currentUrl) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+      return file ? URL.createObjectURL(file) : null;
+    });
   }
 
   function clearNewPhoto() {
     setSelectedFile(null);
-    setPreviewUrl(null);
+    setPreviewUrl((currentUrl) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+      return null;
+    });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -362,15 +373,15 @@ export function ReviewForm(props: Props) {
     null
   );
   const selectedPhotoRef = useRef<File | null>(null);
-
-  const [redirecting, setRedirecting] = useState(false);
+  const redirecting = !!state?.data;
   const navigatedRef = useRef(false);
   useEffect(() => {
     if (navigatedRef.current) return;
     if (state?.data) {
       navigatedRef.current = true;
-      setRedirecting(true);
-      router.replace(`/entry/${props.entryId}`);
+      navigateHistoryOrReplace(router, {
+        fallbackHref: `/entry/${props.entryId}`,
+      });
     }
   }, [state, router, props.entryId]);
 

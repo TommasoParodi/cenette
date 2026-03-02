@@ -1,6 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const REPLACE_HTML = (target: string) =>
+  `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script>window.location.replace(${JSON.stringify(target)});</script><p>Reindirizzamento…</p></body></html>`;
+
+function isProtectedPath(pathname: string) {
+  return (
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/profile" ||
+    pathname.startsWith("/group/") ||
+    pathname.startsWith("/entry/")
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -28,7 +41,17 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresca la sessione e valida il token (getUser/getSession non revalidano)
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user && isProtectedPath(request.nextUrl.pathname)) {
+    return new NextResponse(REPLACE_HTML("/"), {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
+    });
+  }
 
   return supabaseResponse;
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { deleteGroup, leaveGroup } from "@/server-actions/groups";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 const ThreeDotsIcon = () => (
   <svg
@@ -53,7 +54,7 @@ export function GroupTopbarMenu({
     const result = await deleteGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      navigateHistoryOrReplace(router, { fallbackHref: "/dashboard" });
     } else if (result?.error) {
       alert(result.error);
     }
@@ -70,7 +71,7 @@ export function GroupTopbarMenu({
     const result = await leaveGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      navigateHistoryOrReplace(router, { fallbackHref: "/dashboard" });
     } else if (result?.error) {
       alert(result.error);
     }

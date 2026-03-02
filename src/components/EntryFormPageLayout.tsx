@@ -3,7 +3,7 @@ import { Topbar } from "@/components/Topbar";
 type EntryFormPageLayoutProps = {
   title: string;
   backHref: string;
-  /** Se true, il back non lascia la pagina in history (replace) */
+  /** Se true, il back usa la history del browser; se manca, cade su backHref */
   backReplace?: boolean;
   children: React.ReactNode;
 };

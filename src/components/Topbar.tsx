@@ -14,7 +14,7 @@ export type TopbarProps = {
   showBack?: boolean;
   /** Link del pulsante Indietro */
   backHref?: string;
-  /** Se true, navigazione con replace (la pagina corrente non resta in history) */
+  /** Se true, prova ad andare davvero indietro; se non c'è history usa backHref come fallback */
   backReplace?: boolean;
   /** Contenuto a destra (es. Esci, Modifica, codice invito) */
   right?: React.ReactNode;

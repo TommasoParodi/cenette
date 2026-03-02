@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { createGroup } from "@/server-actions/groups";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type CreateGroupState =
   | null
@@ -56,14 +57,13 @@ export function CreateGroupForm({
     null
   );
 
-  const [redirecting, setRedirecting] = useState(false);
+  const redirecting = !!(state && !state.error && redirectToGroup);
   const navigatedRef = useRef(false);
   useEffect(() => {
     if (navigatedRef.current) return;
     if (state && !state.error && redirectToGroup) {
       navigatedRef.current = true;
-      setRedirecting(true);
-      router.replace("/dashboard");
+      navigateHistoryOrReplace(router, { fallbackHref: "/dashboard" });
     }
   }, [state, redirectToGroup, router]);
 

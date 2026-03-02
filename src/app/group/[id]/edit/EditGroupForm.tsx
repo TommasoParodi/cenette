@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { updateGroup, deleteGroup } from "@/server-actions/groups";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type FormState = string | { data: { groupId: string } } | null;
 
@@ -60,12 +61,14 @@ export function EditGroupForm({
     null as FormState
   );
 
-  const [redirecting, setRedirecting] = useState(false);
+  const redirecting =
+    !!(state && typeof state === "object" && "data" in state && state.data?.groupId);
   useEffect(() => {
     if (state && typeof state === "object" && "data" in state && state.data?.groupId) {
-      setRedirecting(true);
       router.refresh();
-      router.replace("/group/" + state.data.groupId);
+      navigateHistoryOrReplace(router, {
+        fallbackHref: "/group/" + state.data.groupId,
+      });
     }
   }, [state, router]);
 
@@ -80,7 +83,7 @@ export function EditGroupForm({
     const result = await deleteGroup(formData);
     if (result?.data) {
       router.refresh();
-      router.replace("/dashboard");
+      navigateHistoryOrReplace(router, { fallbackHref: "/dashboard", steps: 2 });
     }
   };
 

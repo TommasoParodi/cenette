@@ -11,7 +11,8 @@ import { compressPhotoFiles } from "@/lib/compress-photos";
 import { AddPhotoButton } from "@/components/AddPhotoButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { inputBaseClassName, inputDropzoneClassName } from "@/components/ui/inputBaseStyles";
+import { inputBaseClassName } from "@/components/ui/inputBaseStyles";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 export type EntryFormMember = { id: string; displayName: string; avatarUrl?: string | null };
 export type EntryFormPhotoItem = { id: string; url: string };
@@ -102,23 +103,18 @@ export function EntryForm(props: EntryFormProps) {
     ? pendingPhotos.length
     : serverPhotos.length + pendingPhotos.length;
   const canAddMorePhotos = totalPhotoCount < MAX_PHOTOS;
+  const visibleRemovingPhotoId =
+    !isCreate &&
+    removingPhotoId &&
+    !serverPhotos.some((photo) => photo.id === removingPhotoId)
+      ? null
+      : removingPhotoId;
 
   useEffect(() => {
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [previewUrls]);
-
-  // Dopo il refresh la foto rimossa non è più in serverPhotos: resetta lo stato
-  useEffect(() => {
-    if (
-      removingPhotoId &&
-      !isCreate &&
-      !serverPhotos.some((p) => p.id === removingPhotoId)
-    ) {
-      setRemovingPhotoId(null);
-    }
-  }, [removingPhotoId, isCreate, serverPhotos]);
 
   async function handleAddPhotos(filesFromInput?: FileList | null) {
     const input = photoInputRef.current;
@@ -220,7 +216,7 @@ export function EntryForm(props: EntryFormProps) {
         setPending(false);
         setError(result.error);
       } else if (result?.data) {
-        router.back();
+        navigateHistoryOrReplace(router, { fallbackHref: `/group/${groupId}` });
         // Non resettare pending: l'overlay resta fino alla navigazione, evita il flicker
       } else {
         setPending(false);
@@ -234,7 +230,7 @@ export function EntryForm(props: EntryFormProps) {
         setPending(false);
         setError(result.error);
       } else if (result?.data) {
-        router.replace(`/entry/${entryId}`);
+        navigateHistoryOrReplace(router, { fallbackHref: `/entry/${entryId}` });
         // Non resettare pending: l'overlay resta fino alla navigazione, evita il flicker
       } else {
         setPending(false);
@@ -430,7 +426,6 @@ export function EntryForm(props: EntryFormProps) {
             const serverPhoto = serverPhotos[slotIndex];
             const pendingIndex = isCreate ? slotIndex : slotIndex - serverPhotos.length;
             const previewUrl = pendingIndex >= 0 ? previewUrls[pendingIndex] : undefined;
-            const hasPhoto = !!serverPhoto || previewUrl !== undefined;
             const isAddSlot = canAddMorePhotos && slotIndex === totalPhotoCount;
 
             if (isAddSlot) {
@@ -452,11 +447,11 @@ export function EntryForm(props: EntryFormProps) {
                   <button
                     type="button"
                     onClick={() => handleRemoveServerPhoto(serverPhoto.id)}
-                    disabled={removingPhotoId === serverPhoto.id}
+                    disabled={visibleRemovingPhotoId === serverPhoto.id}
                     className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-white shadow disabled:opacity-70"
-                    aria-label={removingPhotoId === serverPhoto.id ? "Sto rimuovendo la foto…" : "Rimuovi foto"}
+                    aria-label={visibleRemovingPhotoId === serverPhoto.id ? "Sto rimuovendo la foto…" : "Rimuovi foto"}
                   >
-                    {removingPhotoId === serverPhoto.id ? (
+                    {visibleRemovingPhotoId === serverPhoto.id ? (
                       <LoadingSpinner className="h-3.5 w-3.5 border-2 border-white/40 border-t-white" />
                     ) : (
                       <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

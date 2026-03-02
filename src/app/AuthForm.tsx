@@ -65,12 +65,22 @@ export function AuthForm() {
     clearMessages();
     setGoogleLoading(true);
     try {
-      await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
         },
       });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.replace(data.url);
+        return;
+      }
+      throw new Error("Impossibile avviare l'accesso con Google.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Si è verificato un errore.";
+      setMessage({ type: "error", text: msg });
     } finally {
       setGoogleLoading(false);
     }
@@ -99,7 +109,7 @@ export function AuthForm() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        window.location.href = "/dashboard";
+        window.location.replace("/dashboard");
         return;
       }
       const { data, error } = await supabase.auth.signUp({ email, password });

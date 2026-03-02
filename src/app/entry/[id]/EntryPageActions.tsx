@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useState } from "react";
 import { PageLoadingOverlay } from "@/components/PageLoadingOverlay";
 import { deleteEntry as deleteEntryAction, deleteReview as deleteReviewAction } from "@/server-actions/entries";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type EntryPageActionsContextValue = {
   deleteReview: (reviewId: string) => Promise<void>;
@@ -50,7 +51,9 @@ export function EntryPageActionsProvider({
     try {
       const result = await deleteEntryAction(entryId);
       if (result?.data && "groupId" in result.data) {
-        router.replace(`/group/${result.data.groupId}`);
+        navigateHistoryOrReplace(router, {
+          fallbackHref: `/group/${result.data.groupId}`,
+        });
       } else if (result?.error) {
         alert(result.error);
       }

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { joinGroup } from "@/server-actions/groups";
+import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type JoinGroupState =
   | null
@@ -53,7 +54,7 @@ export function JoinGroupForm({
     if (navigatedRef.current) return;
     if (state && !state.error && redirectToGroup) {
       navigatedRef.current = true;
-      router.replace("/dashboard");
+      navigateHistoryOrReplace(router, { fallbackHref: "/dashboard" });
     }
   }, [state, redirectToGroup, router]);
 
