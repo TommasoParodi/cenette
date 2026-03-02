@@ -37,7 +37,7 @@ export async function updateProfileDisplayName(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  return { ok: true };
+  return { ok: true as const };
 }
 
 export async function uploadAvatar(formData: FormData) {
@@ -115,7 +115,7 @@ export async function uploadAvatar(formData: FormData) {
       });
       revalidatePath("/profile");
       revalidatePath("/dashboard");
-      return { ok: true, avatarRefresh: refreshTs };
+      return { ok: true as const, avatarRefresh: refreshTs };
     } else {
       console.error("uploadAvatar profile update error:", updateError);
       return { error: "Avatar caricato ma non aggiornato nel profilo." };
@@ -130,7 +130,7 @@ export async function uploadAvatar(formData: FormData) {
   });
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  return { ok: true, avatarRefresh: refreshTs };
+  return { ok: true as const, avatarRefresh: refreshTs };
 }
 
 export async function removeAvatar() {
@@ -164,5 +164,5 @@ export async function removeAvatar() {
 
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  return { ok: true };
+  return { ok: true as const };
 }
