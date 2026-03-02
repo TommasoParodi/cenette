@@ -7,7 +7,6 @@ import { createOrUpdateReview } from "@/server-actions/entries";
 import { AddPhotoButton } from "@/components/AddPhotoButton";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { inputBaseClassName } from "@/components/ui/inputBaseStyles";
-import { navigateHistoryOrReplace } from "@/lib/history-navigation";
 
 type ReviewFormState =
   | null
@@ -379,9 +378,9 @@ export function ReviewForm(props: Props) {
     if (navigatedRef.current) return;
     if (state?.data) {
       navigatedRef.current = true;
-      navigateHistoryOrReplace(router, {
-        fallbackHref: `/entry/${props.entryId}`,
-      });
+      // Vai sempre al dettaglio evento: il link "Modifica" usa replace, quindi
+      // history.back() porterebbe alla lista eventi invece che al dettaglio.
+      router.replace(`/entry/${props.entryId}`);
     }
   }, [state, router, props.entryId]);
 
