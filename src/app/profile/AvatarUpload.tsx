@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -8,7 +9,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 type AvatarUploadProps = {
   avatarSignedUrl: string | null;
   initials: string;
-  uploadAvatar: (formData: FormData) => Promise<{ error?: string } | void>;
+  uploadAvatar: (formData: FormData) => Promise<{ ok?: true; avatarRefresh?: string; error?: string } | void>;
 };
 
 function AvatarUploadLabel({
@@ -65,13 +66,27 @@ export function AvatarUpload({
   initials,
   uploadAvatar,
 }: AvatarUploadProps) {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form
       ref={formRef}
       action={async (formData: FormData) => {
-        await uploadAvatar(formData);
+        setError(null);
+        const result = await uploadAvatar(formData);
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        if (result?.ok) {
+          const url = result.avatarRefresh
+            ? `/profile?avatar_refresh=${result.avatarRefresh}`
+            : "/profile";
+          router.refresh();
+          router.push(url);
+        }
       }}
       className="relative"
     >
@@ -86,6 +101,11 @@ export function AvatarUpload({
         }}
       />
       <AvatarUploadLabel avatarSignedUrl={avatarSignedUrl} initials={initials} />
+      {error && (
+        <p className="mt-2 text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

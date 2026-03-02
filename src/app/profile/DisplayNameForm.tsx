@@ -1,11 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
 type DisplayNameFormProps = {
   initialDisplayName: string | null;
-  updateProfileDisplayName: (formData: FormData) => Promise<{ error?: string } | void>;
+  updateProfileDisplayName: (formData: FormData) => Promise<{ ok?: true; error?: string } | void>;
 };
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
@@ -26,13 +27,24 @@ export function DisplayNameForm({
   initialDisplayName,
   updateProfileDisplayName,
 }: DisplayNameFormProps) {
+  const router = useRouter();
   const [value, setValue] = useState(initialDisplayName ?? "");
+  const [error, setError] = useState<string | null>(null);
   const canSubmit = value.trim().length > 0;
 
   return (
     <form
       action={async (formData: FormData) => {
-        await updateProfileDisplayName(formData);
+        setError(null);
+        const result = await updateProfileDisplayName(formData);
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        if (result?.ok) {
+          router.refresh();
+          router.push("/profile");
+        }
       }}
       className="flex flex-col gap-3"
     >
@@ -45,6 +57,11 @@ export function DisplayNameForm({
         className="w-full rounded-xl border border-separator-line bg-surface-muted px-4 py-2.5 text-sm text-foreground placeholder:text-text-tertiary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         maxLength={100}
       />
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       <SubmitButton disabled={!canSubmit} />
     </form>
   );

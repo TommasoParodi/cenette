@@ -9,10 +9,16 @@ function safeRedirectPath(next: string | null): string {
   return next;
 }
 
+function withAuthFlag(url: string): string {
+  const hasQuery = url.includes("?");
+  return `${url}${hasQuery ? "&" : "?"}from_auth=1`;
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const target = safeRedirectPath(requestUrl.searchParams.get("next"));
+  const baseTarget = safeRedirectPath(requestUrl.searchParams.get("next"));
+  const target = withAuthFlag(baseTarget);
 
   const response = new NextResponse(REPLACE_HTML(target), {
     headers: { "Content-Type": "text/html; charset=utf-8" },

@@ -180,19 +180,15 @@ export function EntryForm(props: EntryFormProps) {
     setRemovingPhotoId(photoId);
     const formData = new FormData();
     formData.append("photoId", photoId);
-    try {
-      await deleteEntryPhoto(formData);
-      router.refresh();
-      // Non resettare removingPhotoId: lo spinner resta fino al refresh che aggiorna serverPhotos
-    } catch (e) {
-      if (
-        typeof (e as { digest?: string })?.digest === "string" &&
-        (e as { digest: string }).digest.startsWith("NEXT_REDIRECT")
-      ) {
-        return;
-      }
-      setError("Errore durante la rimozione della foto.");
+    const result = await deleteEntryPhoto(formData);
+    if (result?.error) {
+      setError(result.error);
       setRemovingPhotoId(null);
+      return;
+    }
+    if (result?.ok && result.entryId) {
+      router.refresh();
+      router.push(`/entry/${result.entryId}/edit`);
     }
   }
 

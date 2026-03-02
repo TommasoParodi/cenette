@@ -45,3 +45,4 @@ public/swe-worker*
 next-env.d.ts
 
 .env.local
+/docs/private/

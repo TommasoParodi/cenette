@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
 type RemoveAvatarButtonProps = {
-  removeAvatar: () => Promise<{ error?: string } | void>;
+  removeAvatar: () => Promise<{ ok?: true; error?: string } | void>;
 };
 
 function SubmitButton() {
@@ -21,13 +23,30 @@ function SubmitButton() {
 }
 
 export function RemoveAvatarButton({ removeAvatar }: RemoveAvatarButtonProps) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
   return (
     <form
       action={async () => {
-        await removeAvatar();
+        setError(null);
+        const result = await removeAvatar();
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        if (result?.ok) {
+          router.refresh();
+          router.push("/profile");
+        }
       }}
     >
       <SubmitButton />
+      {error && (
+        <p className="mt-2 text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

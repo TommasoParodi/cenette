@@ -2,7 +2,6 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { redirect, RedirectType } from "next/navigation";
 
 export type EntryType = "HOME" | "OUT";
 export type VoteMode = "SIMPLE" | "DETAILED";
@@ -375,7 +374,7 @@ export async function deleteEntryPhoto(formData: FormData) {
 
   revalidatePath(`/entry/${photo.entry_id}`);
   revalidatePath(`/group/${entry.group_id}`);
-  redirect(`/entry/${photo.entry_id}/edit`, RedirectType.replace);
+  return { ok: true, entryId: photo.entry_id };
 }
 
 /** Carica subito le foto selezionate (senza salvare il resto del form). Redirect alla stessa pagina modifica. */

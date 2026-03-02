@@ -3,7 +3,6 @@
 import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 const AVATAR_REFRESH_COOKIE = "avatar_refresh";
 
@@ -38,7 +37,7 @@ export async function updateProfileDisplayName(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  redirect("/profile");
+  return { ok: true };
 }
 
 export async function uploadAvatar(formData: FormData) {
@@ -116,7 +115,7 @@ export async function uploadAvatar(formData: FormData) {
       });
       revalidatePath("/profile");
       revalidatePath("/dashboard");
-      redirect(`/profile?avatar_refresh=${refreshTs}`);
+      return { ok: true, avatarRefresh: refreshTs };
     } else {
       console.error("uploadAvatar profile update error:", updateError);
       return { error: "Avatar caricato ma non aggiornato nel profilo." };
@@ -131,7 +130,7 @@ export async function uploadAvatar(formData: FormData) {
   });
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  redirect("/profile");
+  return { ok: true, avatarRefresh: refreshTs };
 }
 
 export async function removeAvatar() {
@@ -165,5 +164,5 @@ export async function removeAvatar() {
 
   revalidatePath("/profile");
   revalidatePath("/dashboard");
-  redirect("/profile");
+  return { ok: true };
 }

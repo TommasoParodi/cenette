@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { AuthHistoryFix } from "@/components/AuthHistoryFix";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -80,6 +81,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} min-h-screen antialiased`}
       >
+        <AuthHistoryFix />
         {children}
       </body>
     </html>
