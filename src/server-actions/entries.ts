@@ -167,7 +167,7 @@ export async function updateEntry(entryId: string, formData: FormData) {
 
   const { data: entry } = await supabase
     .from("entries")
-    .select("id, group_id, created_by")
+    .select("id, group_id, created_by, vote_mode")
     .eq("id", entryId)
     .single();
 
@@ -200,6 +200,26 @@ export async function updateEntry(entryId: string, formData: FormData) {
   const happenedAt = new Date(happenedAtRaw);
   if (Number.isNaN(happenedAt.getTime())) {
     return { error: "Data non valida." };
+  }
+
+  const previousVoteMode = (entry as { vote_mode?: VoteMode }).vote_mode;
+  const voteModeChanged = previousVoteMode != null && previousVoteMode !== voteMode;
+
+  if (voteModeChanged) {
+    const { data: reviewsWithPhoto } = await supabase
+      .from("reviews")
+      .select("id, photo_path")
+      .eq("entry_id", entryId)
+      .not("photo_path", "is", null);
+    const reviewPhotoPaths = (reviewsWithPhoto ?? []).map((r) => (r as { photo_path: string }).photo_path).filter(Boolean);
+    if (reviewPhotoPaths.length > 0) {
+      await supabase.storage.from("review-photos").remove(reviewPhotoPaths);
+    }
+    const { error: reviewsDeleteError } = await supabase.from("reviews").delete().eq("entry_id", entryId);
+    if (reviewsDeleteError) {
+      console.error("updateEntry: errore cancellazione recensioni al cambio modalità voto", reviewsDeleteError);
+      return { error: "Impossibile aggiornare l'evento: errore durante l'eliminazione delle recensioni." };
+    }
   }
 
   const { error } = await supabase
