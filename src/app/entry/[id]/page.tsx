@@ -315,7 +315,6 @@ export default async function EntryPage({
           <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-center px-4 py-4">
             <Link
               href={`/entry/${entryId}/review`}
-              replace
               className="flex items-center justify-center gap-3 rounded-full bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-lg transition hover:opacity-90"
               aria-label="Aggiungi recensione"
             >

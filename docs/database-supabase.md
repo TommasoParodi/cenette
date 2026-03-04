@@ -219,7 +219,7 @@ Constraints:
 RLS:
 - SELECT: group members
 - INSERT: group member AND user_id = auth.uid() AND (is_entry_participant(entry_id) OR NOT entry_has_participants(entry_id))
-- UPDATE/DELETE: only review author
+- UPDATE/DELETE: only review author OR entry creator (per eliminare tutte le recensioni al cambio modalità voto)
 
 Helper:
 - is_review_author(review_id)
