@@ -67,19 +67,11 @@ export async function uploadAvatar(formData: FormData) {
   const storagePath = getAvatarStoragePath(user.id);
   const bytes = await file.arrayBuffer();
 
-  // Se c'è già un avatar, rimuovilo prima: le policy RLS consentono DELETE+INSERT ma non UPDATE/upsert.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("avatar_url")
-    .eq("id", user.id)
-    .single();
-  if (profile?.avatar_url) {
-    await supabase.storage.from(AVATAR_BUCKET).remove([profile.avatar_url]);
-  }
-
+  // upsert: true evita "The resource already exists" su PWA/mobile (race o remove che fallisce).
+  // Le policy RLS "upload" (INSERT) e "update own avatar" (UPDATE) consentono entrambe le operazioni.
   const { error: uploadError } = await supabase.storage
     .from(AVATAR_BUCKET)
-    .upload(storagePath, bytes, { contentType: file.type, upsert: false });
+    .upload(storagePath, bytes, { contentType: file.type, upsert: true });
 
   if (uploadError) {
     console.error("uploadAvatar error:", uploadError);
